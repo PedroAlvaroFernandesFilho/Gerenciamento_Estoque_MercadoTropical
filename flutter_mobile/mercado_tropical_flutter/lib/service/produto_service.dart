@@ -1,12 +1,12 @@
 import '../models/produto.dart';
 
-// Serviço que simula o banco de dados em memória
+// Serviço local que armazena os produtos em memória
 class ProdutoService {
   final List<Produto> _bancoEmMemoria = [
     Produto(
       id: 1,
       nome: "Feijão Carioca 1kg",
-      quantidade: 6,
+      quantidade: 3, // Estoque baixo e Vencido (Testa prioridade vermelha + triângulo amarelo)
       minimo: 5,
       unidade: "pacotes",
       validade: "15/04/2024",
@@ -15,28 +15,28 @@ class ProdutoService {
     Produto(
       id: 2,
       nome: "Arroz Tio João 5kg",
-      quantidade: 2,
+      quantidade: 2, // Estoque baixo e Vencendo logo
       minimo: 5,
       unidade: "pacotes",
-      validade: "20/10/2026",
+      validade: "25/10/2026",
       icone: "🌾",
     ),
     Produto(
       id: 3,
       nome: "Café Pilão 500g",
-      quantidade: 3,
+      quantidade: 3, // Estoque baixo, mas validade longa
       minimo: 5,
       unidade: "pacotes",
-      validade: "12/11/2026",
+      validade: "12/11/2027",
       icone: "☕",
     ),
     Produto(
       id: 4,
       nome: "Leite Itambé 1L",
-      quantidade: 4,
+      quantidade: 12, // Estoque normal, mas vencendo logo
       minimo: 10,
       unidade: "caixinhas",
-      validade: "18/10/2026",
+      validade: "20/10/2026",
       icone: "🥛",
     ),
     Produto(
@@ -54,26 +54,26 @@ class ProdutoService {
       quantidade: 12,
       minimo: 6,
       unidade: "unidades",
-      validade: "10/12/2026",
+      validade: "10/12/2027",
       icone: "🌻",
     ),
   ];
 
   int _proximoId = 7;
 
-  // Retorna todos os produtos da lista
+  // Lista todos os produtos
   Future<List<Produto>> listarProdutos() async {
     return List.from(_bancoEmMemoria);
   }
 
-  // Adiciona um novo produto na lista
+  // Cria novo produto
   Future<Produto> criarProduto(Produto produto) async {
     final novo = produto.copyWith(id: _proximoId++);
     _bancoEmMemoria.add(novo);
     return novo;
   }
 
-  // Atualiza um produto existente pelo ID
+  // Atualiza um produto existente
   Future<Produto> atualizarProduto(int id, Produto produto) async {
     final index = _bancoEmMemoria.indexWhere((p) => p.id == id);
     if (index != -1) {
@@ -83,7 +83,7 @@ class ProdutoService {
     throw Exception('Produto não encontrado');
   }
 
-  // Remove um produto da lista pelo ID
+  // Exclui um produto pelo ID
   Future<void> deletarProduto(int id) async {
     _bancoEmMemoria.removeWhere((p) => p.id == id);
   }

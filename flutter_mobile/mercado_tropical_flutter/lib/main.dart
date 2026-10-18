@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'provider/estoque_provider.dart';
-import 'ui/screens/estoque_screen.dart';
+import 'ui/screens/home_page.dart';
 
-// Ponto de entrada da aplicação
+// Inicialização da aplicação apontando para a HomePage
 void main() {
   runApp(const MercadoTropicalApp());
 }
@@ -12,7 +12,6 @@ class MercadoTropicalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Escuta alterações no tamanho da letra para atualizar toda a aplicação
     return ListenableBuilder(
       listenable: estoqueProvider,
       builder: (context, _) {
@@ -21,7 +20,6 @@ class MercadoTropicalApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: ThemeData.dark(useMaterial3: true),
           builder: (context, child) {
-            // Aplica o aumento de 14% na fonte quando ativado
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(estoqueProvider.isLargeFont ? 1.14 : 1.0),
@@ -29,7 +27,7 @@ class MercadoTropicalApp extends StatelessWidget {
               child: child!,
             );
           },
-          home: const EstoqueScreen(),
+          home: const HomePage(),
         );
       },
     );

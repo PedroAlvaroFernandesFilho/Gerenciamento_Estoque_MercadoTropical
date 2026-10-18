@@ -1,4 +1,4 @@
-// Modelo de dados de cada produto do estoque
+// Modelo de dados do produto e regras de validade e estoque
 class Produto {
   final int? id;
   final String nome;
@@ -18,33 +18,50 @@ class Produto {
     required this.icone,
   });
 
-  // Verifica se a data de validade já passou
-  bool get isVencido {
+  // Converte o texto DD/MM/AAAA em objeto de data
+  DateTime? get _dataValidade {
     try {
       final partes = validade.split('/');
-      if (partes.length != 3) return false;
-      final dataVal = DateTime(
+      if (partes.length != 3) return null;
+      return DateTime(
         int.parse(partes[2]),
         int.parse(partes[1]),
         int.parse(partes[0]),
       );
-      return dataVal.isBefore(DateTime.now());
     } catch (_) {
-      return false;
+      return null;
     }
   }
 
-  // Verifica se o estoque está igual ou abaixo do mínimo
-  bool get isPoucoEstoque => !isVencido && quantidade <= minimo;
+  // Verifica se o produto já passou da validade
+  bool get isVencido {
+    final data = _dataValidade;
+    if (data == null) return false;
+    final hoje = DateTime.now();
+    final hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+    return data.isBefore(hojeSemHora);
+  }
 
-  // Retorna o estado atual do produto para os filtros
-  String get status {
+  // Verifica se o produto vence nos próximos 30 dias
+  bool get isVencendoLogo {
+    if (isVencido) return false;
+    final data = _dataValidade;
+    if (data == null) return false;
+    final diferenca = data.difference(DateTime.now()).inDays;
+    return diferenca <= 30;
+  }
+
+  // Verifica se a quantidade está igual ou abaixo do mínimo
+  bool get isPoucoEstoque => quantidade <= minimo;
+
+  // Define a prioridade de status baseada na validade
+  String get statusValidade {
     if (isVencido) return 'vencido';
-    if (isPoucoEstoque) return 'baixo';
+    if (isVencendoLogo) return 'vencendo';
     return 'normal';
   }
 
-  // Cria uma cópia do produto alterando apenas os campos necessários
+  // Cria uma cópia atualizada do produto
   Produto copyWith({
     int? id,
     String? nome,

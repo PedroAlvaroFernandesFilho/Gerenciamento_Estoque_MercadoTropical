@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import '../../models/produto.dart';
 import '../../provider/estoque_provider.dart';
 import '../theme/tropical_theme.dart';
+import '../widgets/confirmacao_dialog.dart';
 
-// Tela de formulário para criar ou editar um produto
-class ProductFormScreen extends StatefulWidget {
+// Tela de formulário para criar ou editar dados de um produto
+class ProdutoFormScreen extends StatefulWidget {
   final Produto? produtoExistente;
 
-  const ProductFormScreen({super.key, this.produtoExistente});
+  const ProdutoFormScreen({super.key, this.produtoExistente});
 
   @override
-  State<ProductFormScreen> createState() => _ProductFormScreenState();
+  State<ProdutoFormScreen> createState() => _ProdutoFormScreenState();
 }
 
-class _ProductFormScreenState extends State<ProductFormScreen> {
+class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nomeCtrl;
   late TextEditingController _qtdCtrl;
@@ -27,13 +28,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   @override
   void initState() {
     super.initState();
-    // Preenche os campos caso seja edição de um produto existente
     final p = widget.produtoExistente;
     _nomeCtrl = TextEditingController(text: p?.nome ?? '');
     _qtdCtrl = TextEditingController(text: p != null ? '${p.quantidade}' : '10');
     _minCtrl = TextEditingController(text: p != null ? '${p.minimo}' : '5');
     _unidadeCtrl = TextEditingController(text: p?.unidade ?? 'pacotes');
-    _validadeCtrl = TextEditingController(text: p?.validade ?? '20/12/2026');
+    _validadeCtrl = TextEditingController(text: p?.validade ?? '20/12/2027');
     _iconeSelecionado = p?.icone ?? '🌾';
   }
 
@@ -46,7 +46,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       appBar: AppBar(
         backgroundColor: TropicalColors.surface,
         foregroundColor: Colors.white,
-        title: Text(editando ? 'Editar Produto' : 'Cadastrar Novo Produto'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, size: 28),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          editando ? 'Editar Produto' : 'Novo Produto',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -57,7 +64,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             children: [
               const Text('Escolha um Ícone:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              // Lista de ícones selecionáveis
               Wrap(
                 spacing: 10,
                 children: _icones.map((ic) {
@@ -72,11 +78,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 16),
-              _campoTexto('Nome do Produto (ex: Arroz Tio João 5kg)', _nomeCtrl),
+              _campoTexto('Nome do Produto (ex: Arroz 5kg)', _nomeCtrl),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _campoTexto('Quantidade Atual', _qtdCtrl, isNumero: true)),
+                  Expanded(child: _campoTexto('Estoque Inicial', _qtdCtrl, isNumero: true)),
                   const SizedBox(width: 12),
                   Expanded(child: _campoTexto('Estoque Mínimo', _minCtrl, isNumero: true)),
                 ],
@@ -90,7 +96,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Botão para salvar o formulário
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -111,16 +116,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         icone: _iconeSelecionado,
                       );
 
-                      if (editando) {
-                        await estoqueProvider.editarProduto(novo);
-                      } else {
-                        await estoqueProvider.adicionarProduto(novo);
+                      final confirmado = await mostrarConfirmacao(
+                        context: context,
+                        titulo: editando ? 'Salvar Alterações?' : 'Cadastrar Produto?',
+                        mensagem: editando
+                            ? 'Deseja confirmar as alterações feitas no produto "${novo.nome}"?'
+                            : 'Deseja cadastrar "${novo.nome}" com estoque inicial de ${novo.quantidade} ${novo.unidade}?',
+                        textoConfirmar: 'Sim, Salvar',
+                      );
+
+                      if (confirmado && context.mounted) {
+                        if (editando) {
+                          await estoqueProvider.editarProduto(novo);
+                        } else {
+                          await estoqueProvider.adicionarProduto(novo);
+                        }
+                        if (context.mounted) Navigator.pop(context);
                       }
-                      if (context.mounted) Navigator.pop(context);
                     }
                   },
                   child: Text(
-                    editando ? 'Salvar Alterações' : '➕ Salvar Novo Produto',
+                    editando ? '✓ Salvar Alterações' : '➕ Cadastrar Produto',
                     style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 16),
                   ),
                 ),
@@ -132,7 +148,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
   }
 
-  // Construtor padrão para os campos de texto do formulário
   Widget _campoTexto(String label, TextEditingController ctrl, {bool isNumero = false}) {
     return TextFormField(
       controller: ctrl,

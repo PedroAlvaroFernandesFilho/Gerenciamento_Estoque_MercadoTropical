@@ -10,7 +10,6 @@ from app.schemas.movement import (
 )
 from app.services.product_service import ProductService
 
-
 class MovementService:
     @staticmethod
     def register_entry(

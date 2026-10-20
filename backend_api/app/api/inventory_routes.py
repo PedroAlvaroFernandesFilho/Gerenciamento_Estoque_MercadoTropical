@@ -5,11 +5,9 @@ from app.core.database import get_db
 from app.schemas.inventory import InventorySummaryResponse, ShoppingListItem
 from app.services.inventory_service import InventoryService
 
-
 router = APIRouter(
     tags=["Inventory"],
 )
-
 
 @router.get(
     "/inventory/summary",

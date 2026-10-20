@@ -10,12 +10,10 @@ from app.schemas.product import (
 )
 from app.services.product_service import ProductService
 
-
 router = APIRouter(
     prefix="/products",
     tags=["Products"],
 )
-
 
 @router.post(
     "",
@@ -28,7 +26,6 @@ def create_product(
     db: Session = Depends(get_db),
 ) -> ProductResponse:
     return ProductService.create(db, data)
-
 
 @router.get(
     "",
@@ -46,7 +43,6 @@ def list_products(
         status=status_filter,
     )
 
-
 @router.get(
     "/{product_id}",
     response_model=ProductResponse,
@@ -57,7 +53,6 @@ def get_product(
     db: Session = Depends(get_db),
 ) -> ProductResponse:
     return ProductService.get_by_id(db, product_id)
-
 
 @router.patch(
     "/{product_id}",
@@ -70,7 +65,6 @@ def update_product(
     db: Session = Depends(get_db),
 ) -> ProductResponse:
     return ProductService.update(db, product_id, data)
-
 
 @router.delete(
     "/{product_id}",

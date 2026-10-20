@@ -5,7 +5,6 @@ from app.schemas.inventory import InventorySummaryResponse, ShoppingListItem
 from app.schemas.product import ProductStatus
 from app.services.product_service import ProductService
 
-
 class InventoryService:
     @staticmethod
     def summary(db: Session) -> InventorySummaryResponse:

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.models.movement_stock import StockMovement
 
-
 class MovementRepository:
+
     @staticmethod
     def create(
         db: Session,

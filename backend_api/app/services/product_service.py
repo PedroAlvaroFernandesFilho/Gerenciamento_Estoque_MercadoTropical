@@ -13,7 +13,6 @@ from app.schemas.product import (
     ProductUpdate,
 )
 
-
 class ProductService:
     @staticmethod
     def calculate_status(product: Product) -> ProductStatus:

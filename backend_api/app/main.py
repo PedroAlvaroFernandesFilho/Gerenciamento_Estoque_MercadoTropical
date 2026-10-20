@@ -29,11 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.exception_handler(ProductNotFoundError)
 async def product_not_found_handler(request: Request, exc: ProductNotFoundError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": str(exc)})
-
 
 @app.exception_handler(InsufficientStockError)
 async def insufficient_stock_handler(request: Request, exc: InsufficientStockError) -> JSONResponse:
@@ -46,7 +44,6 @@ async def insufficient_stock_handler(request: Request, exc: InsufficientStockErr
         },
     )
 
-
 @app.get("/", tags=["Health"], summary="Verificar funcionamento da API")
 def health_check() -> dict[str, str]:
     return {
@@ -54,7 +51,6 @@ def health_check() -> dict[str, str]:
         "database": "Supabase PostgreSQL",
         "docs": "/docs",
     }
-
 
 app.include_router(product_router)
 app.include_router(movement_router)

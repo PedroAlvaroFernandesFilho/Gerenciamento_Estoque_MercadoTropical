@@ -12,10 +12,17 @@ class ProductStatus(str, Enum):
 
 
 class ProductCreate(BaseModel):
+
     name: str = Field(min_length=2, max_length=120)
+
     quantity: int = Field(default=0, ge=0)
+
     unit: str = Field(min_length=1, max_length=30)
+
+    icon: str = Field(default="📦", max_length=10)
+
     minimum_stock: int = Field(default=0, ge=0)
+
     expiration_date: date | None = None
 
     @field_validator("name", "unit")
@@ -28,10 +35,17 @@ class ProductCreate(BaseModel):
 
 
 class ProductUpdate(BaseModel):
+
     name: str | None = Field(default=None, min_length=2, max_length=120)
+
     quantity: int | None = Field(default=None, ge=0)
+
     unit: str | None = Field(default=None, min_length=1, max_length=30)
+
+    icon: str | None = Field(default=None, max_length=10)
+
     minimum_stock: int | None = Field(default=None, ge=0)
+
     expiration_date: date | None = None
 
     @field_validator("name", "unit")
@@ -49,11 +63,21 @@ class ProductResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
     name: str
+
     quantity: int
+
     unit: str
+
+    icon: str
+
     minimum_stock: int
+
     expiration_date: date | None
+
     status: ProductStatus
+    
     created_at: datetime
+    
     updated_at: datetime

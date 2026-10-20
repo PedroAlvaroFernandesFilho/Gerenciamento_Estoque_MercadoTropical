@@ -40,6 +40,7 @@ class ProductService:
             name=product.name,
             quantity=product.quantity,
             unit=product.unit,
+            icon=product.icon,
             minimum_stock=product.minimum_stock,
             expiration_date=product.expiration_date,
             status=cls.calculate_status(product),

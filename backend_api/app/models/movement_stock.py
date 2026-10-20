@@ -21,6 +21,8 @@ class StockMovement(Base):
         index=True,
     )
 
+    reason: Mapped[str | None] = mapped_column(String(60), nullable=True)
+
     movement_type: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
 
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)

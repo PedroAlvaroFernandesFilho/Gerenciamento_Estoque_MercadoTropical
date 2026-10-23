@@ -24,8 +24,7 @@ class MovementRepository:
             reason=reason,
         )
         db.add(movement)
-        db.commit()
-        db.refresh(movement)
+        db.flush()
         return movement
 
     @staticmethod

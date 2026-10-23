@@ -36,6 +36,7 @@ class MovementService:
         db.add(product)
         db.commit()
         db.refresh(product)
+        db.refresh(movement)
 
         return StockOperationResponse(
             movement=StockMovementResponse.model_validate(movement),
@@ -77,6 +78,7 @@ class MovementService:
         db.add(product)
         db.commit()
         db.refresh(product)
+        db.refresh(movement)
 
         return StockOperationResponse(
             movement=StockMovementResponse.model_validate(movement),

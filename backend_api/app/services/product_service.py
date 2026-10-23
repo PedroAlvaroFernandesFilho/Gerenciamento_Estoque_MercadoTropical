@@ -27,6 +27,9 @@ class ProductService:
             ):
                 return ProductStatus.EXPIRING_SOON
 
+        if product.quantity == 0:
+            return ProductStatus.OUT_OF_STOCK
+
         if product.quantity <= product.minimum_stock:
             return ProductStatus.LOW_STOCK
 

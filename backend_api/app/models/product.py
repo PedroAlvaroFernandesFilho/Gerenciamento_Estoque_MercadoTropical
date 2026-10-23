@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -19,6 +19,8 @@ class Product(Base):
     icon: Mapped[str] = mapped_column(String(10), nullable=False, default="📦")
     minimum_stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     expiration_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
@@ -33,5 +35,4 @@ class Product(Base):
     movements: Mapped[list["StockMovement"]] = relationship(
         "StockMovement",
         back_populates="product",
-        cascade="all, delete-orphan",
     )

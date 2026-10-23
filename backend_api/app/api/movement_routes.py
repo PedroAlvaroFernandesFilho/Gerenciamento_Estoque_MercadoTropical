@@ -10,11 +10,9 @@ from app.schemas.movement import (
 )
 from app.services.movement_service import MovementService
 
-
 router = APIRouter(
     tags=["Stock Movements"],
 )
-
 
 @router.post(
     "/products/{product_id}/entries",
@@ -28,7 +26,6 @@ def register_entry(
 ) -> StockOperationResponse:
     return MovementService.register_entry(db, product_id, data)
 
-
 @router.post(
     "/products/{product_id}/exits",
     response_model=StockOperationResponse,
@@ -40,7 +37,6 @@ def register_exit(
     db: Session = Depends(get_db),
 ) -> StockOperationResponse:
     return MovementService.register_exit(db, product_id, data)
-
 
 @router.get(
     "/stock-movements",

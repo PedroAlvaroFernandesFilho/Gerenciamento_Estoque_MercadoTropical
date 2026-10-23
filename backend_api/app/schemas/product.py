@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class ProductStatus(str, Enum):
     NORMAL = "normal"
     LOW_STOCK = "low_stock"
+    OUT_OF_STOCK = "out_of_stock"
     EXPIRING_SOON = "expiring_soon"
     EXPIRED = "expired"
 
@@ -29,6 +30,7 @@ class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=120)
     unit: str | None = Field(default=None, min_length=1, max_length=30)
     icon: str | None = Field(default=None, max_length=10)
+    is_active: bool | None = None
     minimum_stock: int | None = Field(default=None, ge=0)
     expiration_date: date | None = None
 
@@ -49,6 +51,7 @@ class ProductResponse(BaseModel):
     quantity: int
     unit: str
     icon: str
+    is_active: bool = True
     minimum_stock: int
     expiration_date: date | None
     status: ProductStatus

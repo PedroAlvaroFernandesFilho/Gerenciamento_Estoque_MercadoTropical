@@ -30,6 +30,7 @@ class MovementService:
             quantity=data.quantity,
             previous_stock=previous,
             new_stock=new_stock,
+            reason=data.reason,
         )
 
         db.add(product)
@@ -70,6 +71,7 @@ class MovementService:
             quantity=data.quantity,
             previous_stock=previous,
             new_stock=new_stock,
+            reason=data.reason,
         )
 
         db.add(product)

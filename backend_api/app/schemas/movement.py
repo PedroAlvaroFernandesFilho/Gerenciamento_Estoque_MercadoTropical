@@ -15,8 +15,8 @@ class StockMovementResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     product_id: int
-    movement_type: MovementType
     reason: str | None = None
+    movement_type: MovementType
     quantity: int
     previous_stock: int
     new_stock: int
@@ -24,7 +24,7 @@ class StockMovementResponse(BaseModel):
 
 class StockOperationResponse(BaseModel):
     movement: StockMovementResponse
-    product_id: int    
+    product_id: int
     product_name: str
     previous_stock: int
     quantity_moved: int

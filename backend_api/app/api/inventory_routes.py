@@ -19,7 +19,6 @@ def inventory_summary(
 ) -> InventorySummaryResponse:
     return InventoryService.summary(db)
 
-
 @router.get(
     "/shopping-list",
     response_model=list[ShoppingListItem],

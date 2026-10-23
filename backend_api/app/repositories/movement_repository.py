@@ -13,6 +13,7 @@ class MovementRepository:
         quantity: int,
         previous_stock: int,
         new_stock: int,
+        reason: str | None = None,
     ) -> StockMovement:
         movement = StockMovement(
             product_id=product_id,
@@ -20,6 +21,7 @@ class MovementRepository:
             quantity=quantity,
             previous_stock=previous_stock,
             new_stock=new_stock,
+            reason=reason,
         )
         db.add(movement)
         db.commit()

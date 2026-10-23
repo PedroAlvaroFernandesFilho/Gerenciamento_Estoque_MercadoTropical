@@ -22,8 +22,8 @@ class ProductCreate(BaseModel):
     @classmethod
     def strip_text(cls, value: str) -> str:
         value = value.strip()
-        if not value:
-            raise ValueError("O campo não pode ficar vazio.")
+        if len (value) < 3:
+            raise ValueError("O campo não pode ficar vazio ou conter apenas espaços.")
         return value
 
 class ProductUpdate(BaseModel):
@@ -57,3 +57,13 @@ class ProductResponse(BaseModel):
     status: ProductStatus
     created_at: datetime
     updated_at: datetime
+
+class ProductListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    quantity: int
+    unit: str
+    icon: str
+    status: ProductStatus

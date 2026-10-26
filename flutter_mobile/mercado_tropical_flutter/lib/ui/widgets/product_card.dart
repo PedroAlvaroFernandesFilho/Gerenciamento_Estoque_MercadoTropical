@@ -5,314 +5,355 @@ import '../screens/produto_form_screen.dart';
 import '../theme/tropical_theme.dart';
 import 'confirmacao_dialog.dart';
 
-// Cartão de exibição de cada produto no estoque
-class ProductCard extends StatefulWidget {
+class ProductCard extends StatelessWidget {
   final Produto produto;
-  final bool iniciarAberto;
 
-  const ProductCard({
-    super.key,
-    required this.produto,
-    this.iniciarAberto = false,
-  });
-
-  @override
-  State<ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<ProductCard> {
-  late bool _expandido;
-
-  @override
-  void initState() {
-    super.initState();
-    _expandido = widget.iniciarAberto;
-  }
+  const ProductCard({super.key, required this.produto});
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.produto;
-    final semEstoque = p.quantidade == 0;
-    final statusVal = p.statusValidade; // 'vencido', 'vencendo', 'normal'
+    final p = produto;
 
-    // Se estiver sem estoque (0), perde a cor e fica em cinza.
-    // Caso contrário, prioriza a cor de acordo com a validade.
-    Color bgCard = TropicalColors.card;
-    Color bordaCard = TropicalColors.border;
-    Widget badgeValidade;
-
-    if (semEstoque) {
-      bgCard = const Color(0xFF1A1D1B);
-      bordaCard = Colors.grey.shade700;
-      badgeValidade = _buildBadge('SEM ESTOQUE', Colors.grey.shade700, Colors.white);
-    } else if (statusVal == 'vencido') {
-      bgCard = TropicalColors.dangerBg;
-      bordaCard = Colors.red.shade500;
-      badgeValidade = _buildBadge('❌ VENCIDO', Colors.red.shade600, Colors.white);
-    } else if (statusVal == 'vencendo') {
-      bgCard = TropicalColors.warningBg;
-      bordaCard = Colors.amber.shade600;
-      badgeValidade = _buildBadge('⏳ Vencendo', const Color(0xFF332711), Colors.amber.shade300);
-    } else {
-      badgeValidade = _buildBadge('Validade OK', TropicalColors.surface, TropicalColors.primary);
+    // Define a cor da borda conforme a prioridade de alerta (incluindo Sem Estoque)
+    Color corBorda = TropicalColors.border;
+    if (p.isVencido) {
+      corBorda = Colors.redAccent;
+    } else if (p.isSemEstoque) {
+      corBorda = Colors.red.shade400;
+    } else if (p.isPoucoEstoque || p.isVencendoLogo) {
+      corBorda = Colors.amber;
     }
 
-    return Opacity(
-      opacity: semEstoque ? 0.65 : 1.0,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: bordaCard, width: 2),
-        ),
-        child: Column(
-          children: [
-            // Cabeçalho clicável do produto (Responsivo contra overflow)
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => setState(() => _expandido = !_expandido),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: TropicalColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: corBorda.withValues(alpha: 0.7), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Cabeçalho: Ícone + Nome + Quantidade Atual
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: TropicalColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: TropicalColors.border),
+                ),
+                child: Text(p.icone, style: const TextStyle(fontSize: 28)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: semEstoque ? Colors.grey.shade800 : Colors.black26,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(p.icone, style: const TextStyle(fontSize: 24)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p.nome,
-                            style: TextStyle(
-                              color: semEstoque ? Colors.grey.shade400 : Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Wrap impede que o texto + triângulo amarelo estourem a largura da tela
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            children: [
-                              Text(
-                                semEstoque ? 'Esgotado (0 ${p.unidade})' : 'Estoque: ${p.quantidade} ${p.unidade}',
-                                style: TextStyle(
-                                  color: semEstoque
-                                      ? Colors.grey.shade400
-                                      : (p.isPoucoEstoque ? Colors.amber.shade300 : TropicalColors.subtext),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (p.isPoucoEstoque && !semEstoque)
-                                const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 18),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    badgeValidade,
-                    const SizedBox(width: 6),
                     Text(
-                      _expandido ? '▲' : '▼',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                      p.nome,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Validade: ${p.validade} • Mín: ${p.minimo} ${p.unidade}',
+                      style: const TextStyle(
+                        color: TropicalColors.subtext,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-
-            // Corpo expandido com detalhes
-            if (_expandido)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              const SizedBox(width: 8),
+              // Caixa de quantidade destacada
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: TropicalColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: corBorda.withValues(alpha: 0.5)),
+                ),
                 child: Column(
                   children: [
-                    const Divider(color: Colors.white12),
-                    if (semEstoque)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade900,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade600),
-                        ),
-                        child: Text(
-                          'Produto esgotado. Registre uma entrada quando chegar nova remessa.',
-                          style: TextStyle(color: Colors.grey.shade300, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    if (p.isVencido && !semEstoque)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade900.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.red.shade400),
-                        ),
-                        child: const Text(
-                          '❌ Ação Urgente: Produto vencido! Retirar da prateleira.',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    if (p.isPoucoEstoque && !semEstoque)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2B2212),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Estoque Baixo: Restam ${p.quantidade} ${p.unidade} (Mínimo ideal: ${p.minimo}).',
-                                style: TextStyle(color: Colors.amber.shade200, fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    // Caixa de Quantidade e Validade
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.black26,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: semEstoque ? Colors.grey.shade700 : TropicalColors.border),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Na Prateleira:', style: TextStyle(color: TropicalColors.subtext, fontSize: 12)),
-                                const SizedBox(height: 2),
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 6,
-                                  children: [
-                                    Text(
-                                      '${p.quantidade}',
-                                      style: TextStyle(
-                                        color: semEstoque
-                                            ? Colors.grey.shade400
-                                            : (p.isPoucoEstoque ? Colors.amber.shade300 : Colors.white),
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    Text(
-                                      p.unidade,
-                                      style: const TextStyle(color: TropicalColors.subtext, fontSize: 13, fontWeight: FontWeight.bold),
-                                    ),
-                                    if (p.isPoucoEstoque && !semEstoque)
-                                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('Validade:', style: TextStyle(color: TropicalColors.subtext, fontSize: 12)),
-                              const SizedBox(height: 4),
-                              Text(
-                                p.validade,
-                                style: TextStyle(
-                                  color: semEstoque
-                                      ? Colors.grey.shade400
-                                      : (p.isVencido
-                                          ? Colors.red.shade300
-                                          : (p.isVencendoLogo ? Colors.amber.shade300 : Colors.white)),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                    Text(
+                      '${p.quantidade}',
+                      style: TextStyle(
+                        color: p.isSemEstoque
+                            ? Colors.redAccent
+                            : (p.isPoucoEstoque ? Colors.amber : TropicalColors.primary),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-
-                    // Botões de Editar e Excluir
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => ProdutoFormScreen(produtoExistente: p)),
-                            );
-                          },
-                          icon: const Icon(Icons.edit, size: 18, color: TropicalColors.subtext),
-                          label: const Text('Editar Dados', style: TextStyle(color: TropicalColors.subtext, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton.icon(
-                          onPressed: () async {
-                            final confirmado = await mostrarConfirmacao(
-                              context: context,
-                              titulo: 'Excluir Produto?',
-                              mensagem: 'Deseja realmente apagar "${p.nome}" do sistema? Esta ação não pode ser desfeita.',
-                              textoConfirmar: 'Sim, Excluir',
-                              corConfirmar: TropicalColors.danger,
-                            );
-                            if (confirmado) {
-                              await estoqueProvider.removerProduto(p);
-                            }
-                          },
-                          icon: Icon(Icons.delete_outline, size: 18, color: Colors.red.shade300),
-                          label: Text('Excluir', style: TextStyle(color: Colors.red.shade300, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                    Text(
+                      p.unidade,
+                      style: const TextStyle(
+                        color: TropicalColors.subtext,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
+            ],
+          ),
+
+          // 2. Etiquetas de Alerta (Vencido, Vencendo, Sem Estoque, Pouco Estoque)
+          if (p.isVencido || p.isVencendoLogo || p.isSemEstoque || p.isPoucoEstoque) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                if (p.isVencido)
+                  _buildBadge('🚨 VENCIDO', Colors.redAccent),
+                if (p.isVencendoLogo)
+                  _buildBadge('⏳ VENCE LOGO', Colors.orangeAccent),
+                if (p.isSemEstoque)
+                  _buildBadge('🚫 SEM ESTOQUE (0)', Colors.red.shade400),
+                if (p.isPoucoEstoque)
+                  _buildBadge('⚠️ POUCO ESTOQUE', Colors.amber),
+              ],
+            ),
           ],
+
+          const SizedBox(height: 14),
+
+          // 3. Botões de Ação (Entrada, Saída, Editar e Desativar)
+          Row(
+            children: [
+              // Botão de Entrada (+)
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TropicalColors.primary,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => _abrirModalMovimentacao(context, p, isEntrada: true),
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('Entrada', style: TextStyle(fontWeight: FontWeight.w900)),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Botão de Saída (-) -> Desabilitado se já estiver sem estoque (0)
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: TropicalColors.border, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: p.isSemEstoque
+                      ? null
+                      : () => _abrirModalMovimentacao(context, p, isEntrada: false),
+                  icon: const Icon(Icons.remove_rounded, size: 20),
+                  label: const Text('Saída', style: TextStyle(fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              // Botão Editar
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: TropicalColors.subtext,
+                    side: const BorderSide(color: TropicalColors.border),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProdutoFormScreen(produtoExistente: p),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Editar', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Botão Desativar (Soft Delete) - Corrigido com corConfirmar
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange.shade300,
+                    side: BorderSide(color: Colors.orange.shade700),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    final confirmado = await mostrarConfirmacao(
+                      context: context,
+                      titulo: 'Desativar Produto?',
+                      mensagem:
+                          'Deseja desativar "${p.nome}"?\n\nEle não aparecerá mais na lista ativa do estoque, mas todo o histórico de movimentações será preservado.',
+                      textoConfirmar: 'Sim, Desativar',
+                      corConfirmar: TropicalColors.danger,
+                    );
+                    if (confirmado) {
+                      estoqueProvider.desativarProduto(p);
+                    }
+                  },
+                  icon: const Icon(Icons.visibility_off_outlined, size: 18),
+                  label: const Text('Desativar', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(String texto, Color cor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cor.withValues(alpha: 0.6)),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          color: cor,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
-  Widget _buildBadge(String texto, Color bg, Color corTexto) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
+  // Modal de Entrada (+) e Saída (-) embutido direto no Card
+  void _abrirModalMovimentacao(BuildContext context, Produto p, {required bool isEntrada}) {
+    int qtd = 1;
+    final corTema = isEntrada ? TropicalColors.primary : Colors.orangeAccent;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: TropicalColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      child: Text(
-        texto,
-        style: TextStyle(color: corTexto, fontSize: 11, fontWeight: FontWeight.w900),
-      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isEntrada ? '➕ ENTRADA DE ESTOQUE' : '➖ SAÍDA DE ESTOQUE',
+                      style: TextStyle(
+                        color: corTema,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${p.icone} ${p.nome} (Atual: ${p.quantidade} ${p.unidade})',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton.filled(
+                          style: IconButton.styleFrom(
+                            backgroundColor: TropicalColors.card,
+                            minimumSize: const Size(54, 54),
+                          ),
+                          onPressed: qtd > 1 ? () => setModalState(() => qtd--) : null,
+                          icon: const Icon(Icons.remove, color: Colors.white, size: 28),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: Text(
+                            '$qtd',
+                            style: TextStyle(
+                              color: corTema,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        IconButton.filled(
+                          style: IconButton.styleFrom(
+                            backgroundColor: corTema,
+                            minimumSize: const Size(54, 54),
+                          ),
+                          onPressed: (!isEntrada && qtd >= p.quantidade)
+                              ? null
+                              : () => setModalState(() => qtd++),
+                          icon: const Icon(Icons.add, color: Colors.black, size: 28),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: corTema,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          if (isEntrada) {
+                            await estoqueProvider.registrarEntrada(p, qtd);
+                          } else {
+                            await estoqueProvider.registrarSaida(p, qtd);
+                          }
+                        },
+                        child: Text(
+                          isEntrada
+                              ? 'Confirmar Entrada (+$qtd ${p.unidade})'
+                              : 'Confirmar Saída (-$qtd ${p.unidade})',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

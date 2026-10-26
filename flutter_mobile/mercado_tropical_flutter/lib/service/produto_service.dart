@@ -1,90 +1,115 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/produto.dart';
 
-// Serviço local que armazena os produtos em memória
+// Serviço HTTP que conecta o Flutter à API FastAPI + Supabase
 class ProdutoService {
-  final List<Produto> _bancoEmMemoria = [
-    Produto(
-      id: 1,
-      nome: "Feijão Carioca 1kg",
-      quantidade: 3, // Estoque baixo e Vencido (Testa prioridade vermelha + triângulo amarelo)
-      minimo: 5,
-      unidade: "pacotes",
-      validade: "15/04/2024",
-      icone: "🫘",
-    ),
-    Produto(
-      id: 2,
-      nome: "Arroz Tio João 5kg",
-      quantidade: 2, // Estoque baixo e Vencendo logo
-      minimo: 5,
-      unidade: "pacotes",
-      validade: "25/10/2026",
-      icone: "🌾",
-    ),
-    Produto(
-      id: 3,
-      nome: "Café Pilão 500g",
-      quantidade: 3, // Estoque baixo, mas validade longa
-      minimo: 5,
-      unidade: "pacotes",
-      validade: "12/11/2027",
-      icone: "☕",
-    ),
-    Produto(
-      id: 4,
-      nome: "Leite Itambé 1L",
-      quantidade: 12, // Estoque normal, mas vencendo logo
-      minimo: 10,
-      unidade: "caixinhas",
-      validade: "20/10/2026",
-      icone: "🥛",
-    ),
-    Produto(
-      id: 5,
-      nome: "Macarrão Galo 1kg",
-      quantidade: 8,
-      minimo: 5,
-      unidade: "pacotes",
-      validade: "18/03/2027",
-      icone: "🍝",
-    ),
-    Produto(
-      id: 6,
-      nome: "Óleo de Soja 900ml",
-      quantidade: 12,
-      minimo: 6,
-      unidade: "unidades",
-      validade: "10/12/2027",
-      icone: "🌻",
-    ),
-  ];
+  // Para testar no navegador (Edge/Chrome) ou Windows, use 127.0.0.1:8000
+  // (Para testar no Emulador Android, mude para http://10.0.2.2:8000)
+  static const String _baseUrl = 'http://127.0.0.1:8000';
 
-  int _proximoId = 7;
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json',
+      };
 
-  // Lista todos os produtos
+  // GET /products
   Future<List<Produto>> listarProdutos() async {
-    return List.from(_bancoEmMemoria);
-  }
+    final response = await http.get(
+      Uri.parse('$_baseUrl/products'),
+      headers: _headers,
+    );
 
-  // Cria novo produto
-  Future<Produto> criarProduto(Produto produto) async {
-    final novo = produto.copyWith(id: _proximoId++);
-    _bancoEmMemoria.add(novo);
-    return novo;
-  }
-
-  // Atualiza um produto existente
-  Future<Produto> atualizarProduto(int id, Produto produto) async {
-    final index = _bancoEmMemoria.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      _bancoEmMemoria[index] = produto.copyWith(id: id);
-      return _bancoEmMemoria[index];
+    if (response.statusCode == 200) {
+      final List<dynamic> lista = jsonDecode(utf8.decode(response.bodyBytes));
+      return lista.map((item) => Produto.fromJson(item)).toList();
     }
-    throw Exception('Produto não encontrado');
+    throw Exception('Erro ao carregar produtos do servidor (${response.statusCode})');
   }
 
-  // Exclui um produto pelo ID
+  // POST /products
+  Future<Produto> criarProduto(Produto produto) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/products'),
+      headers: _headers,
+      body: jsonEncode(produto.toCreateJson()),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final Map<String, dynamic> dados = jsonDecode(utf8.decode(response.bodyBytes));
+      return Produto.fromJson(dados);
+    }
+    throw Exception('Erro ao cadastrar produto (${response.statusCode})');
+  }
+
+  // PATCH /products/{id}
+  Future<Produto> atualizarProduto(int id, Produto produto) async {
+    final response = await http.patch(
+      Uri.parse('$_baseUrl/products/$id'),
+      headers: _headers,
+      body: jsonEncode(produto.toUpdateJson()),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> dados = jsonDecode(utf8.decode(response.bodyBytes));
+      return Produto.fromJson(dados);
+    }
+    throw Exception('Erro ao atualizar produto (${response.statusCode})');
+  }
+
+  // DELETE /products/{id}
   Future<void> deletarProduto(int id) async {
-    _bancoEmMemoria.removeWhere((p) => p.id == id);
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/products/$id'),
+      headers: _headers,
+    );
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      throw Exception('Erro ao excluir produto (${response.statusCode})');
+    }
+  }
+
+  // POST /products/{id}/entries
+  Future<int> registrarEntrada(int productId, int quantidade) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/products/$productId/entries'),
+      headers: _headers,
+      body: jsonEncode({'quantity': quantidade}),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> dados = jsonDecode(utf8.decode(response.bodyBytes));
+      return (dados['new_stock'] as int);
+    }
+    throw Exception('Erro ao registrar entrada (${response.statusCode})');
+  }
+
+  // POST /products/{id}/exits
+  Future<int> registrarSaida(int productId, int quantidade) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/products/$productId/exits'),
+      headers: _headers,
+      body: jsonEncode({'quantity': quantidade}),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> dados = jsonDecode(utf8.decode(response.bodyBytes));
+      return (dados['new_stock'] as int);
+    }
+    throw Exception('Erro ao registrar saída (${response.statusCode})');
+  }
+
+  // GET /stock-movements (Busca o histórico salvo no Supabase)
+  Future<List<Map<String, dynamic>>> listarMovimentacoes() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/stock-movements'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> lista = jsonDecode(utf8.decode(response.bodyBytes));
+      return lista.cast<Map<String, dynamic>>();
+    }
+    return [];
   }
 }

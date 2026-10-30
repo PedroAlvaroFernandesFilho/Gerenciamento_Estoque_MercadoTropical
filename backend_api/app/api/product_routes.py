@@ -77,3 +77,19 @@ def delete_product(
 ) -> Response:
     ProductService.delete(db, product_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get(
+    "/inactive",
+    response_model=list[ProductResponse],
+    summary="Listar produtos desativados"
+)
+def list_inactive_products(db: Session = Depends(get_db)):
+    return ProductService.list_inactive(db)
+
+@router.patch(
+    "/{produtct_id}/reactive",
+    response_model=ProductResponse,
+    summary="Reativar produto"
+)
+def reactive_product(product_id: int, db: Session = Depends(get_db)):
+    return ProductService.reactivate(db, product_id)

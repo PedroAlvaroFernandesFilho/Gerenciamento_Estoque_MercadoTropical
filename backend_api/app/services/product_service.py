@@ -103,3 +103,18 @@ class ProductService:
     def delete(cls, db: Session, product_id: int) -> None:
         product = cls.get_model_by_id(db, product_id)
         ProductRepository.delete(db, product)
+
+    @classmethod
+    def list_inactive(cls, db: Session) -> list[ProductResponse]:
+        return [cls.to_response(p) for p in ProductRepository.get_inactive(db)]
+
+    @classmethod
+    def reactivate(cls, db: Session, product_id: int) -> ProductResponse: 
+        product = db.get(Product, product_id)
+
+        if product is None:
+            raise ProductNotFoundError(product_id)
+        product.is_active = True
+        db.commit()
+        db.refresh(product)
+        return cls.to_response(product)

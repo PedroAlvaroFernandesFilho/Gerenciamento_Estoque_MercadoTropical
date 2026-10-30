@@ -48,11 +48,6 @@ class ProductRepository:
         db.commit()
 
     @staticmethod
-    def search_by_name(db: Session, search: str) -> list[Product]:
-        stmt = (
-            select(Product)
-            .where(Product.is_active.is_(True),  Product.name.ilike(f"%{search.strip()}%"),
-            )
-            .order_by(Product.name.asc())
-        )
+    def get_inactive(db: Session) -> list[Product]:
+        stmt = select(Product).where(Product.is_active.is_(False)).order_by(Product.name.asc())
         return list(db.scalars(stmt).all())

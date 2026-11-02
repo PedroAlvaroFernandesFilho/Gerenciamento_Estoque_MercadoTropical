@@ -99,6 +99,34 @@ class ProdutoService {
     throw Exception('Erro ao registrar saída (${response.statusCode})');
   }
 
+  // GET /products/inactive (endpoint ainda não existe na API)
+  Future<List<Produto>> listarDesativados() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/products/inactive'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> lista = jsonDecode(utf8.decode(response.bodyBytes));
+      return lista.map((item) => Produto.fromJson(item)).toList();
+    }
+    throw Exception('Erro ao carregar produtos desativados (${response.statusCode})');
+  }
+
+  // PATCH /products/{id}/reactivate (endpoint ainda não existe na API)
+  Future<Produto> reativarProduto(int id) async {
+    final response = await http.patch(
+      Uri.parse('$_baseUrl/products/$id/reactivate'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> dados = jsonDecode(utf8.decode(response.bodyBytes));
+      return Produto.fromJson(dados);
+    }
+    throw Exception('Erro ao reativar produto (${response.statusCode})');
+  }
+
   // GET /stock-movements (Busca o histórico salvo no Supabase)
   Future<List<Map<String, dynamic>>> listarMovimentacoes() async {
     final response = await http.get(

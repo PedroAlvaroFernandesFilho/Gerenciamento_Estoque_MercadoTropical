@@ -23,7 +23,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   int _estoqueMinimo = 5;
   DateTime _dataValidade = DateTime.now().add(const Duration(days: 180));
 
-  final List<String> _unidades = ['pacotes', 'unidades', 'caixinhas', 'kg', 'litros', 'fardos'];
+  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'kg', 'litros', 'fardos'];
 
   @override
   void initState() {
@@ -32,9 +32,11 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     _nomeCtrl = TextEditingController(text: p?.nome ?? '');
 
     if (p != null) {
-      _unidadeSelecionada = _unidades.contains(p.unidade.toLowerCase())
-          ? p.unidade.toLowerCase()
-          : 'unidades';
+      final unidadeAtual = p.unidade.toLowerCase();
+      // 'caixinhas' (nome antigo) passa a ser tratado como 'caixa'
+      _unidadeSelecionada = unidadeAtual == 'caixinhas'
+          ? 'caixa'
+          : (_unidades.contains(unidadeAtual) ? unidadeAtual : 'unidades');
       _estoqueInicial = p.quantidade;
       _estoqueMinimo = p.minimo;
       _dataValidade = _converterTextoParaData(p.validade) ?? DateTime.now().add(const Duration(days: 90));
@@ -150,7 +152,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Ícone automático • Val: $_validadeFormatada • Mín: $_estoqueMinimo $_unidadeSelecionada',
+                            editando
+                                ? 'Ícone automático • Unidade: $_unidadeSelecionada'
+                                : 'Ícone automático • Val: $_validadeFormatada • Mín: $_estoqueMinimo $_unidadeSelecionada',
                             style: const TextStyle(color: TropicalColors.subtext, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -162,7 +166,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               const SizedBox(height: 20),
 
               // 2. Nome do Produto
-              _buildTituloSecao('1. NOME DO PRODUTO (DEFINE O ÍCONE AUTOMATICAMENTE):'),
+              _buildTituloSecao('1. NOME / DESCRIÇÃO DO PRODUTO (DEFINE O ÍCONE AUTOMATICAMENTE):'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nomeCtrl,
@@ -212,7 +216,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               ),
               const SizedBox(height: 20),
 
-              // 4. Data de Validade
+              // 4. Data de Validade (apenas no cadastro)
+              if (!editando) ...[
               _buildTituloSecao('3. DATA DE VALIDADE DO LOTE:'),
               const SizedBox(height: 8),
               InkWell(
@@ -265,7 +270,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               ),
               const SizedBox(height: 20),
 
-              // 5. Estoque Mínimo
+              // 5. Estoque Mínimo (apenas no cadastro)
               _buildTituloSecao('4. AVISAR ESTOQUE BAIXO (⚠️) QUANDO CHEGAR EM:'),
               const SizedBox(height: 8),
               _buildContadorVisual(
@@ -278,6 +283,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 onAumentar: () => setState(() => _estoqueMinimo++),
               ),
               const SizedBox(height: 20),
+              ],
 
               // 6. Estoque Inicial (Apenas na criação)
               if (!editando) ...[
@@ -307,7 +313,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Estoque atual no banco: $_estoqueInicial $_unidadeSelecionada.\nPara somar ou retirar unidades, utilize os menus de Entrada (+) ou Saída (−).',
+                          'Aqui você altera apenas o nome e a unidade do produto.\nEstoque atual: $_estoqueInicial $_unidadeSelecionada. Para somar ou retirar unidades, use as telas de Entrada e Saída.',
                           style: const TextStyle(color: TropicalColors.subtext, fontSize: 12, height: 1.3),
                         ),
                       ),
@@ -328,15 +334,20 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      final produtoSalvo = Produto(
-                        id: widget.produtoExistente?.id,
-                        nome: nomeAtual,
-                        quantidade: _estoqueInicial,
-                        minimo: _estoqueMinimo,
-                        unidade: _unidadeSelecionada,
-                        validade: _validadeFormatada,
-                        icone: iconeAutomatico,
-                      );
+                      // Na edição, só nome e unidade mudam; quantidade, mínimo e validade são preservados.
+                      final produtoSalvo = editando
+                          ? widget.produtoExistente!.copyWith(
+                              nome: nomeAtual,
+                              unidade: _unidadeSelecionada,
+                            )
+                          : Produto(
+                              nome: nomeAtual,
+                              quantidade: _estoqueInicial,
+                              minimo: _estoqueMinimo,
+                              unidade: _unidadeSelecionada,
+                              validade: _validadeFormatada,
+                              icone: iconeAutomatico,
+                            );
 
                       final confirmado = await mostrarConfirmacao(
                         context: context,
@@ -363,6 +374,52 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
                 ),
               ),
+
+              // 8. Desativar produto (apenas na edição)
+              if (editando) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade300,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () async {
+                      final p = widget.produtoExistente!;
+                      final confirmado = await mostrarConfirmacao(
+                        context: context,
+                        titulo: 'Desativar Produto?',
+                        mensagem:
+                            'Deseja desativar "${p.nome}"?\n\nEle não aparecerá mais na lista ativa do estoque, mas todo o histórico de movimentações será preservado.\nVocê pode reativá-lo em "Produtos Desativados".',
+                        textoConfirmar: 'Sim, Desativar',
+                        corConfirmar: TropicalColors.danger,
+                      );
+                      if (!confirmado || !context.mounted) return;
+
+                      final ok = await estoqueProvider.desativarProduto(p);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: ok ? TropicalColors.primary : TropicalColors.danger,
+                          content: Text(
+                            ok ? '✅ Produto desativado.' : 'Não foi possível desativar o produto.',
+                            style: TextStyle(
+                              color: ok ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                      if (ok) Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.visibility_off_outlined, size: 18),
+                    label: const Text('Desativar Produto', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -446,4 +503,4 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       ),
     );
   }
-}
+}

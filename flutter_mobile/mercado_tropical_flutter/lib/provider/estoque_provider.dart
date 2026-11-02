@@ -8,6 +8,9 @@ class EstoqueProvider extends ChangeNotifier {
 
   List<Produto> _produtos = [];
   List<LogMovimentacao> _logs = [];
+  List<Produto> _desativados = [];
+  bool _carregandoDesativados = false;
+  String? _erroDesativados;
 
   bool _carregando = false;
   String? _erro;
@@ -22,6 +25,9 @@ class EstoqueProvider extends ChangeNotifier {
   String get filtroStatus => _filtroStatus;
   String get termoBusca => _termoBusca;
   bool get isLargeFont => _isLargeFont;
+  List<Produto> get produtosDesativados => _desativados;
+  bool get carregandoDesativados => _carregandoDesativados;
+  String? get erroDesativados => _erroDesativados;
 
   List<Produto> get todosProdutos => _produtos.where((p) => p.ativo).toList();
 
@@ -40,8 +46,9 @@ class EstoqueProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Itens sem estoque vão para o final da lista; a ordem original (nome) é preservada em cada grupo.
   List<Produto> get produtosFiltrados {
-    return _produtos.where((p) {
+    final filtrados = _produtos.where((p) {
       if (!p.ativo) return false; // Garante que só ativos apareçam
 
       bool bateFiltro = true;
@@ -53,6 +60,11 @@ class EstoqueProvider extends ChangeNotifier {
       final bateBusca = p.nome.toLowerCase().contains(_termoBusca.toLowerCase());
       return bateFiltro && bateBusca;
     }).toList();
+
+    return [
+      ...filtrados.where((p) => !p.isSemEstoque),
+      ...filtrados.where((p) => p.isSemEstoque),
+    ];
   }
 
   // Contadores atualizados
@@ -86,12 +98,13 @@ class EstoqueProvider extends ChangeNotifier {
   Future<void> carregarHistorico() async {
     try {
       final movimentosApi = await _service.listarMovimentacoes();
-      final mapaNomes = {for (var p in _produtos) p.id: p.nome};
+      // Inclui os desativados para o histórico mostrar o nome deles
+      final mapaNomes = {for (var p in [..._produtos, ..._desativados]) p.id: p.nome};
 
       _logs = movimentosApi.map((m) {
         final prodId = m['product_id'] as int?;
         final nomeProd = mapaNomes[prodId] ?? 'Produto #$prodId';
-        final tipoApi = (m['type'] ?? '').toString();
+        final tipoApi = (m['movement_type'] ?? '').toString();
         final qtd = m['quantity'] ?? 0;
         final motivo = (m['reason'] ?? '').toString();
         final dataIso = (m['created_at'] ?? '').toString();
@@ -137,12 +150,34 @@ class EstoqueProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> registrarEntrada(Produto produto, int quantidade) async {
+  // novaValidade (DD/MM/AAAA) é opcional: atualiza a validade do produto junto com a entrada
+  Future<void> registrarEntrada(Produto produto, int quantidade, {String? novaValidade}) async {
     if (produto.id == null) return;
     try {
       await _service.registrarEntrada(produto.id!, quantidade);
-      _registrarLogLocal('entrada', produto.nome, 'Adicionado +$quantidade ${produto.unidade}');
+
+      String? erroValidade;
+      final alterarValidade = novaValidade != null && novaValidade != produto.validade;
+      if (alterarValidade) {
+        try {
+          await _service.atualizarProduto(produto.id!, produto.copyWith(validade: novaValidade));
+        } catch (_) {
+          erroValidade = 'Entrada registrada, mas não foi possível atualizar a validade.';
+        }
+      }
+
+      _registrarLogLocal(
+        'entrada',
+        produto.nome,
+        'Adicionado +$quantidade ${produto.unidade}'
+        '${alterarValidade && erroValidade == null ? ' • Nova validade: $novaValidade' : ''}',
+      );
       await carregarProdutos();
+
+      if (erroValidade != null) {
+        _erro = erroValidade;
+        notifyListeners();
+      }
     } catch (e) {
       _erro = 'Erro ao registrar entrada: $e';
       notifyListeners();
@@ -162,16 +197,50 @@ class EstoqueProvider extends ChangeNotifier {
   }
 
   // Soft Delete: Desativa o produto mantendo o histórico no Supabase
-  Future<void> desativarProduto(Produto produto) async {
-    if (produto.id == null) return;
+  // Retorna true se deu certo (a tela mostra o aviso)
+  Future<bool> desativarProduto(Produto produto) async {
+    if (produto.id == null) return false;
     try {
       await _service.deletarProduto(produto.id!);
       _produtos.removeWhere((p) => p.id == produto.id);
+      _desativados
+        ..add(produto)
+        ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
       _registrarLogLocal('exclusao', produto.nome, 'Produto desativado do estoque ativo');
       notifyListeners();
-    } catch (e) {
-      _erro = 'Erro ao desativar produto: $e';
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Busca na API a lista de produtos desativados
+  Future<void> carregarDesativados() async {
+    _carregandoDesativados = true;
+    _erroDesativados = null;
+    notifyListeners();
+
+    try {
+      _desativados = await _service.listarDesativados();
+    } catch (_) {
+      _erroDesativados = 'Não foi possível carregar os produtos desativados.';
+    } finally {
+      _carregandoDesativados = false;
       notifyListeners();
+    }
+  }
+
+  // Reativa o produto e recarrega o estoque. Retorna null se deu certo, ou a mensagem de erro
+  Future<String?> reativarProduto(Produto produto) async {
+    if (produto.id == null) return 'Produto inválido.';
+    try {
+      await _service.reativarProduto(produto.id!);
+      _desativados.removeWhere((p) => p.id == produto.id);
+      _registrarLogLocal('cadastro', produto.nome, 'Produto reativado no estoque');
+      await carregarProdutos();
+      return null;
+    } catch (_) {
+      return 'Não foi possível reativar o produto.';
     }
   }
 

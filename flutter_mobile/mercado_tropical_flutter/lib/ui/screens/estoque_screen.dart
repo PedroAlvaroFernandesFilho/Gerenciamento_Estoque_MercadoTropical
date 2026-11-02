@@ -77,7 +77,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Cor Vermelha indica produto vencido (prioridade). O triângulo amarelo (⚠️) ao lado do número avisa que o estoque está baixo.',
+                          'Cor Vermelha indica produto vencido (prioridade). O triângulo amarelo (⚠️) avisa que o estoque está baixo. Itens sem estoque ficam cinza no final da lista.',
                           style: TextStyle(color: TropicalColors.text, fontSize: 12),
                         ),
                       ),
@@ -227,4 +227,4 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
       onSelected: (_) => onTap(),
     );
   }
-}
+}

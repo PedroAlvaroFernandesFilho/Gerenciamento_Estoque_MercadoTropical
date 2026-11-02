@@ -3,6 +3,7 @@ import '../../provider/estoque_provider.dart';
 import '../theme/tropical_theme.dart';
 import '../widgets/summary_grid.dart';
 import '../widgets/top_header.dart';
+import 'desativados_screen.dart';
 import 'entrada_screen.dart';
 import 'estoque_screen.dart';
 import 'log_screen.dart';
@@ -115,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 const SizedBox(height: 6),
                                 const Text(
-                                  'Verifique se o Uvicorn está rodando (uvicorn app.main:app --reload) e se o CORSMiddleware foi adicionado ao main.py.',
+                                  'Não foi possível se conectar. Verifique sua conexão com a internet e tente novamente.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: TropicalColors.subtext, fontSize: 12),
                                 ),
@@ -197,6 +198,19 @@ class _HomePageState extends State<HomePage> {
                           subtitulo: 'Consultar registro de entradas, saídas e edições',
                           onTap: () {
                             Navigator.push(context, MaterialPageRoute(builder: (_) => const LogScreen()));
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Produtos desativados (consulta e reativação)
+                        _buildMenuButton(
+                          context: context,
+                          icone: '🗃️',
+                          titulo: 'Produtos Desativados',
+                          subtitulo: 'Consultar e reativar produtos fora do estoque',
+                          onTap: () async {
+                            await Navigator.push(context, MaterialPageRoute(builder: (_) => const DesativadosScreen()));
+                            estoqueProvider.carregarProdutos();
                           },
                         ),
                       ],

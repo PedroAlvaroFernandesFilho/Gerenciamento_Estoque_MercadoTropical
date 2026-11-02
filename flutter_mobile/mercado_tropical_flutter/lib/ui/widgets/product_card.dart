@@ -1,34 +1,51 @@
 import 'package:flutter/material.dart';
 import '../../models/produto.dart';
-import '../../provider/estoque_provider.dart';
 import '../screens/produto_form_screen.dart';
 import '../theme/tropical_theme.dart';
-import 'confirmacao_dialog.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Produto produto;
 
   const ProductCard({super.key, required this.produto});
 
   @override
-  Widget build(BuildContext context) {
-    final p = produto;
+  State<ProductCard> createState() => _ProductCardState();
+}
 
-    // Define a cor da borda conforme a prioridade de alerta (incluindo Sem Estoque)
+class _ProductCardState extends State<ProductCard> {
+  // Começa recolhido; ao tocar no card ele expande e mostra o botão Editar
+  bool _expandido = false;
+
+  // Tons de cinza ameno usados quando o produto está sem estoque
+  static const Color _cinzaCard = Color(0xFF222826);
+  static const Color _cinzaSuperficie = Color(0xFF1B201E);
+  static const Color _cinzaBorda = Color(0xFF4A524F);
+  static const Color _cinzaTexto = Color(0xFF8A9490);
+  static const Color _cinzaSubtexto = Color(0xFF69726E);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.produto;
+    final semEstoque = p.isSemEstoque;
+
+    // Sem estoque tem prioridade: o card inteiro fica cinza (não há o que vencer na prateleira).
+    // Nos demais casos, a borda segue a prioridade de alerta.
     Color corBorda = TropicalColors.border;
-    if (p.isVencido) {
+    if (semEstoque) {
+      corBorda = _cinzaBorda;
+    } else if (p.isVencido) {
       corBorda = Colors.redAccent;
-    } else if (p.isSemEstoque) {
-      corBorda = Colors.red.shade400;
     } else if (p.isPoucoEstoque || p.isVencendoLogo) {
       corBorda = Colors.amber;
     }
 
-    return Container(
+    return GestureDetector(
+      onTap: () => setState(() => _expandido = !_expandido),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: TropicalColors.card,
+        color: semEstoque ? _cinzaCard : TropicalColors.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: corBorda.withValues(alpha: 0.7), width: 1.5),
       ),
@@ -42,11 +59,22 @@ class ProductCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: TropicalColors.surface,
+                  color: semEstoque ? _cinzaSuperficie : TropicalColors.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: TropicalColors.border),
+                  border: Border.all(color: semEstoque ? _cinzaBorda : TropicalColors.border),
                 ),
-                child: Text(p.icone, style: const TextStyle(fontSize: 28)),
+                child: semEstoque
+                    ? ColorFiltered(
+                        // Emoji em escala de cinza e levemente apagado
+                        colorFilter: const ColorFilter.matrix(<double>[
+                          0.2126, 0.7152, 0.0722, 0, 0,
+                          0.2126, 0.7152, 0.0722, 0, 0,
+                          0.2126, 0.7152, 0.0722, 0, 0,
+                          0, 0, 0, 0.55, 0,
+                        ]),
+                        child: Text(p.icone, style: const TextStyle(fontSize: 28)),
+                      )
+                    : Text(p.icone, style: const TextStyle(fontSize: 28)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -55,8 +83,8 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Text(
                       p.nome,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: semEstoque ? _cinzaTexto : Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                       ),
@@ -64,8 +92,8 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Validade: ${p.validade} • Mín: ${p.minimo} ${p.unidade}',
-                      style: const TextStyle(
-                        color: TropicalColors.subtext,
+                      style: TextStyle(
+                        color: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -78,7 +106,7 @@ class ProductCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: TropicalColors.surface,
+                  color: semEstoque ? _cinzaSuperficie : TropicalColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: corBorda.withValues(alpha: 0.5)),
                 ),
@@ -87,8 +115,8 @@ class ProductCard extends StatelessWidget {
                     Text(
                       '${p.quantidade}',
                       style: TextStyle(
-                        color: p.isSemEstoque
-                            ? Colors.redAccent
+                        color: semEstoque
+                            ? _cinzaTexto
                             : (p.isPoucoEstoque ? Colors.amber : TropicalColors.primary),
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -96,8 +124,8 @@ class ProductCard extends StatelessWidget {
                     ),
                     Text(
                       p.unidade,
-                      style: const TextStyle(
-                        color: TropicalColors.subtext,
+                      style: TextStyle(
+                        color: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -105,11 +133,23 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 4),
+              // Seta que gira ao expandir/recolher
+              AnimatedRotation(
+                turns: _expandido ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  Icons.expand_more_rounded,
+                  size: 22,
+                  color: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
+                ),
+              ),
             ],
           ),
 
-          // 2. Etiquetas de Alerta (Vencido, Vencendo, Sem Estoque, Pouco Estoque)
-          if (p.isVencido || p.isVencendoLogo || p.isSemEstoque || p.isPoucoEstoque) ...[
+          // 2. Etiquetas de Alerta (Vencido, Vencendo, Pouco Estoque).
+          // Sem estoque não exibe etiqueta: o card cinza já comunica o estado.
+          if (!semEstoque && (p.isVencido || p.isVencendoLogo || p.isPoucoEstoque)) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -119,108 +159,47 @@ class ProductCard extends StatelessWidget {
                   _buildBadge('🚨 VENCIDO', Colors.redAccent),
                 if (p.isVencendoLogo)
                   _buildBadge('⏳ VENCE LOGO', Colors.orangeAccent),
-                if (p.isSemEstoque)
-                  _buildBadge('🚫 SEM ESTOQUE (0)', Colors.red.shade400),
                 if (p.isPoucoEstoque)
                   _buildBadge('⚠️ POUCO ESTOQUE', Colors.amber),
               ],
             ),
           ],
 
-          const SizedBox(height: 14),
-
-          // 3. Botões de Ação (Entrada, Saída, Editar e Desativar)
-          Row(
-            children: [
-              // Botão de Entrada (+)
-              Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TropicalColors.primary,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => _abrirModalMovimentacao(context, p, isEntrada: true),
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: const Text('Entrada', style: TextStyle(fontWeight: FontWeight.w900)),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Botão de Saída (-) -> Desabilitado se já estiver sem estoque (0)
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: TropicalColors.border, width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: p.isSemEstoque
-                      ? null
-                      : () => _abrirModalMovimentacao(context, p, isEntrada: false),
-                  icon: const Icon(Icons.remove_rounded, size: 20),
-                  label: const Text('Saída', style: TextStyle(fontWeight: FontWeight.w900)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              // Botão Editar
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: TropicalColors.subtext,
-                    side: const BorderSide(color: TropicalColors.border),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProdutoFormScreen(produtoExistente: p),
+          // 3. Única ação do card: editar nome e unidade (só aparece com o card expandido).
+          // Entrada e saída ficam nas telas próprias de Entrada e Saída.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _expandido
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
+                          side: BorderSide(color: semEstoque ? _cinzaBorda : TropicalColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProdutoFormScreen(produtoExistente: p),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Editar', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Editar', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Botão Desativar (Soft Delete) - Corrigido com corConfirmar
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange.shade300,
-                    side: BorderSide(color: Colors.orange.shade700),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    final confirmado = await mostrarConfirmacao(
-                      context: context,
-                      titulo: 'Desativar Produto?',
-                      mensagem:
-                          'Deseja desativar "${p.nome}"?\n\nEle não aparecerá mais na lista ativa do estoque, mas todo o histórico de movimentações será preservado.',
-                      textoConfirmar: 'Sim, Desativar',
-                      corConfirmar: TropicalColors.danger,
-                    );
-                    if (confirmado) {
-                      estoqueProvider.desativarProduto(p);
-                    }
-                  },
-                  icon: const Icon(Icons.visibility_off_outlined, size: 18),
-                  label: const Text('Desativar', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
+      ),
       ),
     );
   }
@@ -241,119 +220,6 @@ class ProductCard extends StatelessWidget {
           fontWeight: FontWeight.w900,
         ),
       ),
-    );
-  }
-
-  // Modal de Entrada (+) e Saída (-) embutido direto no Card
-  void _abrirModalMovimentacao(BuildContext context, Produto p, {required bool isEntrada}) {
-    int qtd = 1;
-    final corTema = isEntrada ? TropicalColors.primary : Colors.orangeAccent;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: TropicalColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isEntrada ? '➕ ENTRADA DE ESTOQUE' : '➖ SAÍDA DE ESTOQUE',
-                      style: TextStyle(
-                        color: corTema,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${p.icone} ${p.nome} (Atual: ${p.quantidade} ${p.unidade})',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton.filled(
-                          style: IconButton.styleFrom(
-                            backgroundColor: TropicalColors.card,
-                            minimumSize: const Size(54, 54),
-                          ),
-                          onPressed: qtd > 1 ? () => setModalState(() => qtd--) : null,
-                          icon: const Icon(Icons.remove, color: Colors.white, size: 28),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 28),
-                          child: Text(
-                            '$qtd',
-                            style: TextStyle(
-                              color: corTema,
-                              fontSize: 34,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        IconButton.filled(
-                          style: IconButton.styleFrom(
-                            backgroundColor: corTema,
-                            minimumSize: const Size(54, 54),
-                          ),
-                          onPressed: (!isEntrada && qtd >= p.quantidade)
-                              ? null
-                              : () => setModalState(() => qtd++),
-                          icon: const Icon(Icons.add, color: Colors.black, size: 28),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: corTema,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          if (isEntrada) {
-                            await estoqueProvider.registrarEntrada(p, qtd);
-                          } else {
-                            await estoqueProvider.registrarSaida(p, qtd);
-                          }
-                        },
-                        child: Text(
-                          isEntrada
-                              ? 'Confirmar Entrada (+$qtd ${p.unidade})'
-                              : 'Confirmar Saída (-$qtd ${p.unidade})',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

@@ -18,6 +18,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
   int? _produtoSelecionadoId;
   int _quantidadeAdicionar = 5;
   String _buscaLocal = '';
+  String? _novaValidade; // DD/MM/AAAA; null = manter a validade atual do produto
 
   @override
   void dispose() {
@@ -39,6 +40,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
       setState(() {
         _produtoSelecionadoId = prod.id;
         _quantidadeAdicionar = 5;
+        _novaValidade = null;
       });
       await Future.delayed(const Duration(milliseconds: 100));
       if (_scrollController.hasClients) {
@@ -48,6 +50,59 @@ class _EntradaScreenState extends State<EntradaScreen> {
           curve: Curves.easeOutCubic,
         );
       }
+    }
+  }
+
+  DateTime? _textoParaData(String texto) {
+    try {
+      final partes = texto.split('/');
+      if (partes.length != 3) return null;
+      return DateTime(int.parse(partes[2]), int.parse(partes[1]), int.parse(partes[0]));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _dataParaTexto(DateTime d) {
+    final dia = d.day.toString().padLeft(2, '0');
+    final mes = d.month.toString().padLeft(2, '0');
+    return '$dia/$mes/${d.year}';
+  }
+
+  // Calendário para escolher a validade do lote que está entrando
+  Future<void> _selecionarValidade(Produto prod) async {
+    final primeira = DateTime(2020);
+    final ultima = DateTime(2035);
+    var inicial = _textoParaData(_novaValidade ?? prod.validade) ??
+        DateTime.now().add(const Duration(days: 180));
+    if (inicial.isBefore(primeira)) inicial = DateTime.now();
+    if (inicial.isAfter(ultima)) inicial = ultima;
+
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: inicial,
+      firstDate: primeira,
+      lastDate: ultima,
+      helpText: 'SELECIONE A VALIDADE DO LOTE',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar Data',
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: TropicalColors.primary,
+              onPrimary: Colors.black,
+              surface: TropicalColors.surface,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (escolhida != null) {
+      setState(() => _novaValidade = _dataParaTexto(escolhida));
     }
   }
 
@@ -192,7 +247,10 @@ class _EntradaScreenState extends State<EntradaScreen> {
               ),
               const SizedBox(width: 8),
               InkWell(
-                onTap: () => setState(() => _produtoSelecionadoId = null),
+                onTap: () => setState(() {
+                  _produtoSelecionadoId = null;
+                  _novaValidade = null;
+                }),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -323,6 +381,61 @@ class _EntradaScreenState extends State<EntradaScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Validade do lote (opcional): se não for escolhida, mantém a validade atual
+          InkWell(
+            onTap: () => _selecionarValidade(prod),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: TropicalColors.card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _novaValidade != null ? TropicalColors.primary : TropicalColors.border,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_month_rounded, color: TropicalColors.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'VALIDADE DO LOTE (OPCIONAL)',
+                          style: TextStyle(color: TropicalColors.subtext, fontSize: 11, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _novaValidade ?? 'Manter atual: ${prod.validade}',
+                          style: TextStyle(
+                            color: _novaValidade != null ? Colors.white : TropicalColors.subtext,
+                            fontSize: _novaValidade != null ? 18 : 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_novaValidade != null)
+                    IconButton(
+                      tooltip: 'Manter validade atual',
+                      icon: const Icon(Icons.close, size: 18, color: TropicalColors.subtext),
+                      onPressed: () => setState(() => _novaValidade = null),
+                    )
+                  else
+                    const Text(
+                      'Definir',
+                      style: TextStyle(color: TropicalColors.primary, fontWeight: FontWeight.w900, fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Botão de Salvar Entrada com verificação final
           SizedBox(
             width: double.infinity,
@@ -337,19 +450,34 @@ class _EntradaScreenState extends State<EntradaScreen> {
                   context: context,
                   titulo: 'Salvar Entrada?',
                   mensagem:
-                      'Confirma a adição de +$_quantidadeAdicionar ${prod.unidade} em "${prod.nome}"?\n\nO estoque passará para $novoTotal ${prod.unidade}.',
+                      'Confirma a adição de +$_quantidadeAdicionar ${prod.unidade} em "${prod.nome}"?\n\nO estoque passará para $novoTotal ${prod.unidade}.'
+                      '${_novaValidade != null ? '\nA validade passará para $_novaValidade.' : ''}',
                   textoConfirmar: 'Sim, Salvar',
                   corConfirmar: TropicalColors.primary,
                 );
 
                 if (confirmado && mounted) {
-                  await estoqueProvider.registrarEntrada(prod, _quantidadeAdicionar);
+                  await estoqueProvider.registrarEntrada(
+                    prod,
+                    _quantidadeAdicionar,
+                    novaValidade: _novaValidade,
+                  );
                   if (mounted) {
-                    setState(() => _produtoSelecionadoId = null);
+                    setState(() {
+                      _produtoSelecionadoId = null;
+                      _novaValidade = null;
+                    });
+                    final erro = estoqueProvider.erroMensagem;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: TropicalColors.primary,
-                        content: Text('✅ Entrada registrada com sucesso!', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                      SnackBar(
+                        backgroundColor: erro == null ? TropicalColors.primary : TropicalColors.danger,
+                        content: Text(
+                          erro ?? '✅ Entrada registrada com sucesso!',
+                          style: TextStyle(
+                            color: erro == null ? Colors.black : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     );
                   }

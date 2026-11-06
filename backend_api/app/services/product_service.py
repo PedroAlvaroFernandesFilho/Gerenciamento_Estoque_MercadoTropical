@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.exceptions import ProductNotFoundError
 from app.models.product import Product
+from app.repositories.movement_repository import MovementRepository
 from app.repositories.product_repository import ProductRepository
+from app.schemas.movement import MovementType
 from app.schemas.product import (
     ProductCreate,
     ProductResponse,
@@ -53,6 +55,7 @@ class ProductService:
     @classmethod
     def create(cls, db: Session, data: ProductCreate) -> ProductResponse:
         product = ProductRepository.create(db, data)
+        cls._log(db, product, MovementType.CREATE, "Cadastro", quantity=product.quantity, previous=0)
         return cls.to_response(product)
 
     @classmethod
@@ -77,9 +80,7 @@ class ProductService:
         status: ProductStatus | None = None,
     ) -> list[ProductResponse]:
         if search:
-            products = ProductRepository.search_by_name(db, search)
-        else:
-            products = ProductRepository.get_all(db)
+            products = ProductRepository.get_all(db, search)
 
         responses = [cls.to_response(product) for product in products]
 
@@ -89,20 +90,21 @@ class ProductService:
         return responses
 
     @classmethod
-    def update(
-        cls,
-        db: Session,
-        product_id: int,
-        data: ProductUpdate,
+    def update(cls, db: Session, product_id: int, data: ProductUpdate,
     ) -> ProductResponse:
         product = cls.get_model_by_id(db, product_id)
+        before = {"name": product.name, "unit": product.unit}
         updated = ProductRepository.update(db, product, data)
+        changes = [f"{k}: {before[k]} -> {getattr(updated, k)}"
+                   for k in before if before[k] != getattr(updated, k)]
+        cls._log(db, updated, MovementType.UPDATE, "; ".join(changes) or "Dados atualizados")
         return cls.to_response(updated)
 
     @classmethod
     def delete(cls, db: Session, product_id: int) -> None:
         product = cls.get_model_by_id(db, product_id)
         ProductRepository.delete(db, product)
+        cls._log(db, product, MovementType.DEACTIVATE, "Produto desativado")
 
     @classmethod
     def list_inactive(cls, db: Session) -> list[ProductResponse]:
@@ -117,4 +119,18 @@ class ProductService:
         product.is_active = True
         db.commit()
         db.refresh(product)
+        cls._log(db, product, MovementType.REACTIVATE, "Produto ativado")
         return cls.to_response(product)
+
+    @staticmethod
+    def _log(db: Session, product: Product, type: MovementType, reason: str, quantity: int = 0, previous: int | None = None):
+        MovementRepository.create(
+            db=db,
+            product_id=product.id,
+            movement_type=type.value,
+            quantity=quantity,
+            previous_stock=product.quantity if previous is None else previous,
+            new_stock=product.quantity,
+            reason=reason[:60],
+        )
+        db.commit()

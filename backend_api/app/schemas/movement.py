@@ -6,6 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field
 class MovementType(str, Enum):
     ENTRY = "entry"
     EXIT = "exit"
+    CREATE = "create"
+    UPDATE = "update"
+    DEACTIVATE = "deactivate"
+    ACTIVATE = "activate"
 
 class StockMovementCreate(BaseModel):
     quantity: int = Field(gt=0)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'provider/estoque_provider.dart';
 import 'ui/screens/home_page.dart';
 
@@ -18,6 +19,13 @@ class MercadoTropicalApp extends StatelessWidget {
         return MaterialApp(
           title: 'Mercado Tropical',
           debugShowCheckedModeBanner: false,
+          locale: const Locale('pt', 'BR'), // Idioma do app: português do Brasil
+          supportedLocales: const [Locale('pt', 'BR')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           theme: ThemeData.dark(useMaterial3: true),
           builder: (context, child) {
             return MediaQuery(

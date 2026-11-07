@@ -70,11 +70,12 @@ class ProdutoService {
   }
 
   // POST /products/{id}/entries
-  Future<int> registrarEntrada(int productId, int quantidade) async {
+  // motivo é opcional e vai no campo "reason" do histórico
+  Future<int> registrarEntrada(int productId, int quantidade, {String? motivo}) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/products/$productId/entries'),
       headers: _headers,
-      body: jsonEncode({'quantity': quantidade}),
+      body: jsonEncode({'quantity': quantidade, if (motivo != null) 'reason': motivo}),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -85,11 +86,12 @@ class ProdutoService {
   }
 
   // POST /products/{id}/exits
-  Future<int> registrarSaida(int productId, int quantidade) async {
+  // motivo (ex: Venda, Descarte / Vencido) vai no campo "reason" para ficar salvo no histórico
+  Future<int> registrarSaida(int productId, int quantidade, {String? motivo}) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/products/$productId/exits'),
       headers: _headers,
-      body: jsonEncode({'quantity': quantidade}),
+      body: jsonEncode({'quantity': quantidade, if (motivo != null) 'reason': motivo}),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {

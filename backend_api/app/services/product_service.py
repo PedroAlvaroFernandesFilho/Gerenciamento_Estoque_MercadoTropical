@@ -119,7 +119,7 @@ class ProductService:
         product.is_active = True
         db.commit()
         db.refresh(product)
-        cls._log(db, product, MovementType.REACTIVATE, "Produto ativado")
+        cls._log(db, product, MovementType.ACTIVATE, "Produto ativado")
         return cls.to_response(product)
 
     @staticmethod

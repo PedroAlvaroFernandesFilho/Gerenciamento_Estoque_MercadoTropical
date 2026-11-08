@@ -12,8 +12,8 @@ class MovementType(str, Enum):
     ACTIVATE = "activate"
 
 class StockMovementCreate(BaseModel):
-    quantity: int = Field(gt=0)
-    reason: str | None = None
+    quantity: int = Field(gt=0, le=1000)
+    reason: str | None = Field(default=None, max_length=60)
 
 class StockMovementResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

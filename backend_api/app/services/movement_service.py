@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InsufficientStockError
+from app.core.exceptions import InsufficientStockError, ProductNotFoundError
 from app.repositories.movement_repository import MovementRepository
 from app.schemas.movement import (
     MovementType,
@@ -18,6 +18,8 @@ class MovementService:
         data: StockMovementCreate,
     ) -> StockOperationResponse:
         product = ProductService.get_model_by_id(db, product_id)
+        if product is None or not product.is_active:
+            raise ProductNotFoundError(product_id)
 
         previous = product.quantity
         product.quantity += data.quantity
@@ -54,6 +56,8 @@ class MovementService:
         data: StockMovementCreate,
     ) -> StockOperationResponse:
         product = ProductService.get_model_by_id(db, product_id)
+        if product is None or not product.is_active:
+            raise ProductNotFoundError(product_id)
 
         if data.quantity > product.quantity:
             raise InsufficientStockError(

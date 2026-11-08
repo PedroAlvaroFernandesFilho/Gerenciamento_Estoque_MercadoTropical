@@ -12,10 +12,10 @@ class ProductStatus(str, Enum):
 
 class ProductCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
-    quantity: int = Field(default=0, ge=0)
+    quantity: int = Field(default=0, ge=0, le=100_0)
     unit: str = Field(min_length=1, max_length=30)
     icon: str = Field(default="📦", max_length=10)
-    minimum_stock: int = Field(default=0, ge=0)
+    minimum_stock: int = Field(default=0, ge=0, le=100_0)
     expiration_date: date | None = None
 
     @field_validator("name", "unit")
@@ -30,8 +30,7 @@ class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=120)
     unit: str | None = Field(default=None, min_length=1, max_length=30)
     icon: str | None = Field(default=None, max_length=10)
-    is_active: bool | None = None
-    minimum_stock: int | None = Field(default=None, ge=0)
+    minimum_stock: int | None = Field(default=None, ge=0, le=100_0)
     expiration_date: date | None = None
 
     @field_validator("name", "unit")

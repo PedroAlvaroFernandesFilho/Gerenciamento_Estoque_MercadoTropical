@@ -10,7 +10,7 @@ void main() {
     await tester.pump();
 
     // Textos fixos do topo da Home, aparecem mesmo sem conexão com a API
-    expect(find.text('Sincronizar'), findsOneWidget);
+    expect(find.text('Atualizar'), findsOneWidget);
     expect(find.text('MENU PRINCIPAL'), findsOneWidget);
   });
 }

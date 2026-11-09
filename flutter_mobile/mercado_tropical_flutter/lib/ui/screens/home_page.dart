@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
                                   : () => estoqueProvider.carregarProdutos(),
                               icon: const Icon(Icons.sync_rounded, color: TropicalColors.primary, size: 18),
                               label: const Text(
-                                'Sincronizar',
+                                'Atualizar',
                                 style: TextStyle(
                                   color: TropicalColors.primary,
                                   fontSize: 12,
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
                                 CircularProgressIndicator(color: TropicalColors.primary),
                                 SizedBox(height: 12),
                                 Text(
-                                  'Sincronizando com o banco de dados...',
+                                  'Carregando produtos...',
                                   style: TextStyle(color: TropicalColors.text, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 const SizedBox(height: 6),
                                 const Text(
-                                  'Não foi possível se conectar. Verifique sua conexão com a internet e tente novamente.',
+                                  'Verifique sua conexão com a internet e tente novamente.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: TropicalColors.subtext, fontSize: 12),
                                 ),
@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                                   onPressed: estoqueProvider.carregarProdutos,
                                   icon: const Icon(Icons.refresh, color: Colors.black),
                                   label: const Text(
-                                    'Tentar Conectar Novamente',
+                                    'Tentar Novamente',
                                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
                                   ),
                                 ),
@@ -157,7 +157,7 @@ class _HomePageState extends State<HomePage> {
                           context: context,
                           icone: '📦',
                           titulo: 'Consultar Estoque (${estoqueProvider.totalItens})',
-                          subtitulo: 'Ver todos os produtos do banco, quantidades e validades',
+                          subtitulo: 'Ver todos os produtos, quantidades e validades',
                           onTap: () async {
                             estoqueProvider.definirFiltro('todos');
                             await Navigator.push(context, MaterialPageRoute(builder: (_) => const EstoqueScreen()));

@@ -360,10 +360,10 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
 
                       final confirmado = await mostrarConfirmacao(
                         context: context,
-                        titulo: editando ? 'Salvar no Banco?' : 'Cadastrar no Banco?',
+                        titulo: editando ? 'Salvar Alterações?' : 'Cadastrar Produto?',
                         mensagem: editando
-                            ? 'Confirma a atualização de "${produtoSalvo.nome}" no banco de dados?'
-                            : 'Deseja cadastrar "${produtoSalvo.nome}" com $_estoqueInicial $_unidadeSelecionada no sistema?',
+                            ? 'Deseja salvar as alterações em "${produtoSalvo.nome}"?'
+                            : 'Deseja cadastrar "${produtoSalvo.nome}" com $_estoqueInicial $_unidadeSelecionada?',
                         textoConfirmar: 'Sim, Salvar',
                       );
 

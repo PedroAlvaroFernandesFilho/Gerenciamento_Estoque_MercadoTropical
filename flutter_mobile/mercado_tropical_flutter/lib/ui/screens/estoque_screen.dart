@@ -44,7 +44,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
               // Botão para forçar sincronização manual com o Supabase
               IconButton(
                 icon: const Icon(Icons.sync_rounded, color: TropicalColors.primary, size: 26),
-                tooltip: 'Atualizar com o Banco de Dados',
+                tooltip: 'Atualizar lista',
                 onPressed: estoqueProvider.carregando ? null : () => estoqueProvider.carregarProdutos(),
               ),
             ],
@@ -185,7 +185,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32),
                       child: Text(
-                        'Nenhum produto encontrado no banco de dados para este filtro.',
+                        'Nenhum produto encontrado para este filtro.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: TropicalColors.subtext),
                       ),
@@ -227,4 +227,4 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
       onSelected: (_) => onTap(),
     );
   }
-}
+}

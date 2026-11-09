@@ -90,7 +90,9 @@ class EstoqueProvider extends ChangeNotifier {
       _produtos = listaDaApi.where((p) => p.ativo).toList();
       await carregarHistorico();
     } catch (e) {
-      _erro = 'Não foi possível conectar ao servidor da API.';
+      // Detalhe técnico só no console; o usuário vê uma mensagem simples
+      debugPrint('Erro ao carregar produtos: $e');
+      _erro = 'Não foi possível carregar os produtos.';
     } finally {
       _carregando = false;
       notifyListeners();
@@ -105,7 +107,8 @@ class EstoqueProvider extends ChangeNotifier {
 
       _logs = movimentosApi.map((m) {
         final prodId = m['product_id'] as int?;
-        final nomeProd = mapaNomes[prodId] ?? 'Produto #$prodId';
+        // Produto fora da lista de ativos (desativado) aparece sem o número interno
+        final nomeProd = mapaNomes[prodId] ?? 'Produto desativado';
         final tipoApi = (m['movement_type'] ?? '').toString();
         final qtd = m['quantity'] ?? 0;
         final motivo = (m['reason'] ?? '').toString();
@@ -133,8 +136,9 @@ class EstoqueProvider extends ChangeNotifier {
       _registrarLogLocal('cadastro', criado.nome, 'Estoque inicial: ${criado.quantidade} ${criado.unidade}');
       notifyListeners();
       return null;
-    } catch (_) {
-      return 'Não foi possível cadastrar o produto. Confira os dados e a conexão com o servidor.';
+    } catch (e) {
+      debugPrint('Erro ao cadastrar produto: $e');
+      return 'Não foi possível cadastrar o produto. Confira os dados e tente novamente.';
     }
   }
 
@@ -150,8 +154,9 @@ class EstoqueProvider extends ChangeNotifier {
       _registrarLogLocal('edicao', salvo.nome, 'Dados atualizados (Mín: ${salvo.minimo} ${salvo.unidade})');
       notifyListeners();
       return null;
-    } catch (_) {
-      return 'Não foi possível salvar as alterações. Confira a conexão com o servidor.';
+    } catch (e) {
+      debugPrint('Erro ao editar produto: $e');
+      return 'Não foi possível salvar as alterações. Tente novamente.';
     }
   }
 
@@ -180,8 +185,9 @@ class EstoqueProvider extends ChangeNotifier {
       );
       await carregarProdutos();
       return erroValidade;
-    } catch (_) {
-      return 'Não foi possível registrar a entrada. Confira a conexão com o servidor.';
+    } catch (e) {
+      debugPrint('Erro ao registrar entrada: $e');
+      return 'Não foi possível registrar a entrada. Tente novamente.';
     }
   }
 
@@ -194,8 +200,9 @@ class EstoqueProvider extends ChangeNotifier {
       _registrarLogLocal('saida', produto.nome, 'Retirado -$quantidade ${produto.unidade} ($motivo)');
       await carregarProdutos();
       return null;
-    } catch (_) {
-      return 'Não foi possível registrar a saída. Confira o estoque disponível e a conexão com o servidor.';
+    } catch (e) {
+      debugPrint('Erro ao registrar saída: $e');
+      return 'Não foi possível registrar a saída. Confira a quantidade disponível e tente novamente.';
     }
   }
 

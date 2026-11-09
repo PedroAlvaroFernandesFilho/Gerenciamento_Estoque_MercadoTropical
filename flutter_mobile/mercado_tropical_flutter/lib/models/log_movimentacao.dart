@@ -1,6 +1,6 @@
 // Modelo de dados para cada registro do histórico (Log)
 class LogMovimentacao {
-  final String tipo; // 'entrada', 'saida', 'cadastro', 'edicao', 'exclusao'
+  final String tipo; // 'entrada', 'saida', 'cadastro', 'edicao', 'exclusao', 'reativacao'
   final String produtoNome;
   final String detalhe;
   final DateTime dataHora;

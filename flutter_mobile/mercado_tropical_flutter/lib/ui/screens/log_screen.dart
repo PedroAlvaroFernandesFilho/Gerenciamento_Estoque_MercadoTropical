@@ -53,6 +53,10 @@ class LogScreen extends StatelessWidget {
                     } else if (item.tipo == 'edicao') {
                       corBorda = Colors.amber;
                       icone = '✏️';
+                    } else if (item.tipo == 'reativacao') {
+                      // Produto reativado (tipo "activate" da API)
+                      corBorda = TropicalColors.primary;
+                      icone = '♻️';
                     }
 
                     return Container(

@@ -114,11 +114,38 @@ class EstoqueProvider extends ChangeNotifier {
         final motivo = (m['reason'] ?? '').toString();
         final dataIso = (m['created_at'] ?? '').toString();
 
-        final ehEntrada = tipoApi == 'entry';
+        // Tipos gravados pela API: entry, exit, create, update, deactivate, activate
+        // (antes, tudo que não era entrada aparecia como saída)
+        final complemento = motivo.isNotEmpty ? ' ($motivo)' : '';
+        String tipo;
+        String detalhe;
+        if (tipoApi == 'entry') {
+          tipo = 'entrada';
+          detalhe = '+$qtd un$complemento';
+        } else if (tipoApi == 'exit') {
+          tipo = 'saida';
+          detalhe = '-$qtd un$complemento';
+        } else if (tipoApi == 'create') {
+          tipo = 'cadastro';
+          detalhe = 'Produto cadastrado • Estoque inicial: $qtd un';
+        } else if (tipoApi == 'update') {
+          tipo = 'edicao';
+          detalhe = _traduzirAlteracoes(motivo);
+        } else if (tipoApi == 'deactivate') {
+          tipo = 'exclusao';
+          detalhe = 'Produto desativado';
+        } else if (tipoApi == 'activate') {
+          tipo = 'reativacao';
+          detalhe = 'Produto reativado';
+        } else {
+          tipo = 'edicao';
+          detalhe = motivo.isNotEmpty ? motivo : 'Movimentação registrada';
+        }
+
         return LogMovimentacao(
-          tipo: ehEntrada ? 'entrada' : 'saida',
+          tipo: tipo,
           produtoNome: nomeProd,
-          detalhe: '${ehEntrada ? '+' : '-'}$qtd un ${motivo.isNotEmpty ? '($motivo)' : ''}',
+          detalhe: detalhe,
           dataHora: DateTime.tryParse(dataIso) ?? DateTime.now(),
         );
       }).toList();
@@ -246,12 +273,74 @@ class EstoqueProvider extends ChangeNotifier {
     try {
       await _service.reativarProduto(produto.id!);
       _desativados.removeWhere((p) => p.id == produto.id);
-      _registrarLogLocal('cadastro', produto.nome, 'Produto reativado no estoque');
+      _registrarLogLocal('reativacao', produto.nome, 'Produto reativado no estoque');
       await carregarProdutos();
       return null;
     } catch (_) {
       return 'Não foi possível reativar o produto.';
     }
+  }
+
+  // Reativação feita pelo cadastro: a quantidade e a validade digitadas viram uma entrada.
+  // reativado = false se nem a reativação deu certo; aviso traz o problema, se houver.
+  Future<({bool reativado, String? aviso})> reativarComEntrada(
+    Produto produto, {
+    required int quantidade,
+    String? validade,
+  }) async {
+    final erro = await reativarProduto(produto);
+    if (erro != null) return (reativado: false, aviso: erro);
+
+    try {
+      if (validade != null && validade != produto.validade) {
+        await _service.atualizarProduto(produto.id!, produto.copyWith(validade: validade));
+      }
+      if (quantidade > 0) {
+        await _service.registrarEntrada(produto.id!, quantidade, motivo: 'Reposição na reativação');
+      }
+      await carregarProdutos();
+      return (reativado: true, aviso: null);
+    } catch (e) {
+      debugPrint('Erro ao registrar reposição na reativação: $e');
+      await carregarProdutos();
+      return (
+        reativado: true,
+        aviso: 'Produto reativado, mas não foi possível registrar a quantidade informada. Use a tela de Entrada.',
+      );
+    }
+  }
+
+  // Procura um produto com nome igual ou parecido entre os ativos e os desativados.
+  // ignorarId: produto que está sendo editado (não conta como repetido).
+  // Lança exceção se não conseguir buscar os desativados (a tela não deixa seguir sem verificar).
+  Future<NomeExistente?> buscarNomeExistente(String nome, {int? ignorarId}) async {
+    _desativados = await _service.listarDesativados();
+    final ativos = _produtos.where((p) => p.id != ignorarId).toList();
+    final desativados = _desativados.where((p) => p.id != ignorarId).toList();
+    final normalizado = Produto.normalizarNome(nome);
+
+    for (final p in ativos) {
+      if (Produto.normalizarNome(p.nome) == normalizado) return NomeExistente(p, desativado: false, igual: true);
+    }
+    for (final p in desativados) {
+      if (Produto.normalizarNome(p.nome) == normalizado) return NomeExistente(p, desativado: true, igual: true);
+    }
+    for (final p in ativos) {
+      if (Produto.nomesParecidos(p.nome, nome)) return NomeExistente(p, desativado: false, igual: false);
+    }
+    for (final p in desativados) {
+      if (Produto.nomesParecidos(p.nome, nome)) return NomeExistente(p, desativado: true, igual: false);
+    }
+    return null;
+  }
+
+  // Deixa o texto das edições vindo da API legível ("name: A -> B" vira "Nome: A → B")
+  String _traduzirAlteracoes(String motivo) {
+    if (motivo.isEmpty) return 'Dados atualizados';
+    return motivo
+        .replaceAll('name:', 'Nome:')
+        .replaceAll('unit:', 'Unidade:')
+        .replaceAll(' -> ', ' → ');
   }
 
   // Alias caso algum código antigo chame removerProduto
@@ -269,18 +358,15 @@ class EstoqueProvider extends ChangeNotifier {
     );
   }
 
-  String _formatarDataHora(String dataIso) {
-    try {
-      final dt = DateTime.parse(dataIso).toLocal();
-      final dia = dt.day.toString().padLeft(2, '0');
-      final mes = dt.month.toString().padLeft(2, '0');
-      final hora = dt.hour.toString().padLeft(2, '0');
-      final min = dt.minute.toString().padLeft(2, '0');
-      return '$dia/$mes às $hora:$min';
-    } catch (_) {
-      return '';
-    }
-  }
+}
+
+// Resultado da busca por nome repetido no cadastro/edição
+class NomeExistente {
+  final Produto produto;
+  final bool desativado;
+  final bool igual; // false = nome apenas parecido (possível erro de digitação)
+
+  NomeExistente(this.produto, {required this.desativado, required this.igual});
 }
 
 // Instância global única do Provider para controle de estado centralizado

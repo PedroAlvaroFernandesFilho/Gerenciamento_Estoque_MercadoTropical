@@ -8,6 +8,8 @@ Future<bool> mostrarConfirmacao({
   required String mensagem,
   required String textoConfirmar,
   Color corConfirmar = TropicalColors.primary,
+  // Texto do botão da esquerda (ex: "Não"); o padrão continua "Cancelar"
+  String textoCancelar = 'Cancelar',
 }) async {
   final resultado = await showDialog<bool>(
     context: context,
@@ -49,9 +51,9 @@ Future<bool> mostrarConfirmacao({
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text(
-                    'Cancelar',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  child: Text(
+                    textoCancelar,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

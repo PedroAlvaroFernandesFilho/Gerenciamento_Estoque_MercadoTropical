@@ -79,8 +79,7 @@ class ProductService:
         search: str | None = None,
         status: ProductStatus | None = None,
     ) -> list[ProductResponse]:
-        if search:
-            products = ProductRepository.get_all(db, search)
+        products = ProductRepository.get_all(db, search)
 
         responses = [cls.to_response(product) for product in products]
 

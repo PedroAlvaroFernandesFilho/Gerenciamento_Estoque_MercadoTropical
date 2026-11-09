@@ -54,8 +54,9 @@ class EstoqueProvider extends ChangeNotifier {
       bool bateFiltro = true;
       if (_filtroStatus == 'baixo') bateFiltro = p.isPoucoEstoque;
       if (_filtroStatus == 'sem_estoque') bateFiltro = p.isSemEstoque;
-      if (_filtroStatus == 'vencendo') bateFiltro = p.isVencendoLogo;
-      if (_filtroStatus == 'vencido') bateFiltro = p.isVencido;
+      // Vencendo/vencido ignoram itens sem estoque (não há nada na prateleira)
+      if (_filtroStatus == 'vencendo') bateFiltro = p.isVencendoLogo && !p.isSemEstoque;
+      if (_filtroStatus == 'vencido') bateFiltro = p.isVencido && !p.isSemEstoque;
 
       final bateBusca = p.nome.toLowerCase().contains(_termoBusca.toLowerCase());
       return bateFiltro && bateBusca;
@@ -71,8 +72,9 @@ class EstoqueProvider extends ChangeNotifier {
   int get totalItens => _produtos.where((p) => p.ativo).length;
   int get totalPoucoEstoque => _produtos.where((p) => p.ativo && p.isPoucoEstoque).length;
   int get totalSemEstoque => _produtos.where((p) => p.ativo && p.isSemEstoque).length;
-  int get totalVencendoLogo => _produtos.where((p) => p.ativo && p.isVencendoLogo).length;
-  int get totalVencidos => _produtos.where((p) => p.ativo && p.isVencido).length;
+  // Vencendo/vencidos não contam itens sem estoque, para bater com o filtro acima
+  int get totalVencendoLogo => _produtos.where((p) => p.ativo && p.isVencendoLogo && !p.isSemEstoque).length;
+  int get totalVencidos => _produtos.where((p) => p.ativo && p.isVencido && !p.isSemEstoque).length;
 
   // Lista de compras inclui quem está com pouco estoque ou zerou
   List<Produto> get listaDeCompras =>
@@ -122,20 +124,23 @@ class EstoqueProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> adicionarProduto(Produto novo) async {
+  // Retorna null se deu certo, ou a mensagem de erro.
+  // O erro não vai para _erro, para não esconder a lista do estoque (a tela mostra o aviso).
+  Future<String?> adicionarProduto(Produto novo) async {
     try {
       final criado = await _service.criarProduto(novo);
       _produtos.add(criado);
       _registrarLogLocal('cadastro', criado.nome, 'Estoque inicial: ${criado.quantidade} ${criado.unidade}');
       notifyListeners();
-    } catch (e) {
-      _erro = 'Erro ao cadastrar produto: $e';
-      notifyListeners();
+      return null;
+    } catch (_) {
+      return 'Não foi possível cadastrar o produto. Confira os dados e a conexão com o servidor.';
     }
   }
 
-  Future<void> editarProduto(Produto atualizado) async {
-    if (atualizado.id == null) return;
+  // Retorna null se deu certo, ou a mensagem de erro (mesmo motivo do cadastro)
+  Future<String?> editarProduto(Produto atualizado) async {
+    if (atualizado.id == null) return 'Produto inválido.';
     try {
       final salvo = await _service.atualizarProduto(atualizado.id!, atualizado);
       final index = _produtos.indexWhere((p) => p.id == salvo.id);
@@ -144,15 +149,16 @@ class EstoqueProvider extends ChangeNotifier {
       }
       _registrarLogLocal('edicao', salvo.nome, 'Dados atualizados (Mín: ${salvo.minimo} ${salvo.unidade})');
       notifyListeners();
-    } catch (e) {
-      _erro = 'Erro ao atualizar produto: $e';
-      notifyListeners();
+      return null;
+    } catch (_) {
+      return 'Não foi possível salvar as alterações. Confira a conexão com o servidor.';
     }
   }
 
   // novaValidade (DD/MM/AAAA) é opcional: atualiza a validade do produto junto com a entrada
-  Future<void> registrarEntrada(Produto produto, int quantidade, {String? novaValidade}) async {
-    if (produto.id == null) return;
+  // Retorna null se deu certo, ou a mensagem de erro para a tela mostrar
+  Future<String?> registrarEntrada(Produto produto, int quantidade, {String? novaValidade}) async {
+    if (produto.id == null) return 'Produto inválido.';
     try {
       await _service.registrarEntrada(produto.id!, quantidade);
 
@@ -173,26 +179,23 @@ class EstoqueProvider extends ChangeNotifier {
         '${alterarValidade && erroValidade == null ? ' • Nova validade: $novaValidade' : ''}',
       );
       await carregarProdutos();
-
-      if (erroValidade != null) {
-        _erro = erroValidade;
-        notifyListeners();
-      }
-    } catch (e) {
-      _erro = 'Erro ao registrar entrada: $e';
-      notifyListeners();
+      return erroValidade;
+    } catch (_) {
+      return 'Não foi possível registrar a entrada. Confira a conexão com o servidor.';
     }
   }
 
-  Future<void> registrarSaida(Produto produto, int quantidade, [String motivo = 'Venda']) async {
-    if (produto.id == null) return;
+  // Retorna null se deu certo, ou a mensagem de erro (antes a tela mostrava sucesso mesmo com falha)
+  Future<String?> registrarSaida(Produto produto, int quantidade, [String motivo = 'Venda']) async {
+    if (produto.id == null) return 'Produto inválido.';
     try {
-      await _service.registrarSaida(produto.id!, quantidade);
+      // Envia o motivo para a API, assim ele fica salvo no histórico
+      await _service.registrarSaida(produto.id!, quantidade, motivo: motivo);
       _registrarLogLocal('saida', produto.nome, 'Retirado -$quantidade ${produto.unidade} ($motivo)');
       await carregarProdutos();
-    } catch (e) {
-      _erro = 'Erro ao registrar saída: $e';
-      notifyListeners();
+      return null;
+    } catch (_) {
+      return 'Não foi possível registrar a saída. Confira o estoque disponível e a conexão com o servidor.';
     }
   }
 

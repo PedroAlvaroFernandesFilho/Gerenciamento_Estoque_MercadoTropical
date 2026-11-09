@@ -367,13 +367,17 @@ class _SaidaScreenState extends State<SaidaScreen> {
                 );
 
                 if (confirmado && mounted) {
-                  await estoqueProvider.registrarSaida(prod, _quantidadeRetirar, _motivo);
+                  final erro = await estoqueProvider.registrarSaida(prod, _quantidadeRetirar, _motivo);
                   if (mounted) {
-                    setState(() => _produtoSelecionadoId = null);
+                    // Só limpa a seleção se deu certo; com erro, o item continua selecionado
+                    if (erro == null) setState(() => _produtoSelecionadoId = null);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: TropicalColors.danger,
-                        content: Text('✅ Saída registrada com sucesso!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      SnackBar(
+                        backgroundColor: erro == null ? TropicalColors.danger : TropicalColors.dangerBg,
+                        content: Text(
+                          erro == null ? '✅ Saída registrada com sucesso!' : '⚠️ $erro',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     );
                   }

@@ -23,7 +23,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   int _estoqueMinimo = 5;
   DateTime _dataValidade = DateTime.now().add(const Duration(days: 180));
 
-  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'kg', 'litros', 'fardos'];
+  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'quilos', 'litros', 'fardos'];
 
   @override
   void initState() {
@@ -34,9 +34,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     if (p != null) {
       final unidadeAtual = p.unidade.toLowerCase();
       // 'caixinhas' (nome antigo) passa a ser tratado como 'caixa'
+      // 'kg' passa a ser 'quilos' (a API exige pelo menos 3 letras na unidade)
       _unidadeSelecionada = unidadeAtual == 'caixinhas'
           ? 'caixa'
-          : (_unidades.contains(unidadeAtual) ? unidadeAtual : 'unidades');
+          : unidadeAtual == 'kg'
+              ? 'quilos'
+              : (_unidades.contains(unidadeAtual) ? unidadeAtual : 'unidades');
       _estoqueInicial = p.quantidade;
       _estoqueMinimo = p.minimo;
       _dataValidade = _converterTextoParaData(p.validade) ?? DateTime.now().add(const Duration(days: 90));
@@ -172,7 +175,13 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 controller: _nomeCtrl,
                 onChanged: (_) => setState(() {}),
                 style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                validator: (val) => (val == null || val.trim().isEmpty) ? 'Digite o nome do produto' : null,
+                // A API recusa nomes com menos de 3 letras; avisa aqui antes de enviar
+                validator: (val) {
+                  final nome = val?.trim() ?? '';
+                  if (nome.isEmpty) return 'Digite o nome do produto';
+                  if (nome.length < 3) return 'O nome precisa ter pelo menos 3 letras';
+                  return null;
+                },
                 decoration: InputDecoration(
                   hintText: 'Ex: Arroz Tio João 5kg, Café Pilão, Leite...',
                   hintStyle: const TextStyle(color: TropicalColors.subtext),
@@ -359,12 +368,25 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       );
 
                       if (confirmado && context.mounted) {
-                        if (editando) {
-                          await estoqueProvider.editarProduto(produtoSalvo);
-                        } else {
-                          await estoqueProvider.adicionarProduto(produtoSalvo);
+                        final erro = editando
+                            ? await estoqueProvider.editarProduto(produtoSalvo)
+                            : await estoqueProvider.adicionarProduto(produtoSalvo);
+                        if (!context.mounted) return;
+
+                        // Em caso de erro, mostra o aviso e continua no formulário
+                        if (erro != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: TropicalColors.danger,
+                              content: Text(
+                                erro,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          );
+                          return;
                         }
-                        if (context.mounted) Navigator.pop(context);
+                        Navigator.pop(context);
                       }
                     }
                   },
@@ -503,4 +525,4 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       ),
     );
   }
-}
+}

@@ -155,12 +155,11 @@ class _EntradaScreenState extends State<EntradaScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProdutoFormScreen()));
                   },
                   icon: const Text('➕', style: TextStyle(fontSize: 18)),
-                  label: const Flexible(
-                    child: Text(
-                      'Cadastrar um Produto Novo no Sistema',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: TropicalColors.primary, fontWeight: FontWeight.w900, fontSize: 15),
-                    ),
+                  // Sem Flexible: o botão já ajusta o label por dentro (evita o erro "Incorrect use of ParentDataWidget")
+                  label: const Text(
+                    'Cadastrar um Produto Novo no Sistema',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: TropicalColors.primary, fontWeight: FontWeight.w900, fontSize: 15),
                   ),
                 ),
               ),
@@ -457,7 +456,8 @@ class _EntradaScreenState extends State<EntradaScreen> {
                 );
 
                 if (confirmado && mounted) {
-                  await estoqueProvider.registrarEntrada(
+                  // O erro agora vem como retorno (antes era lido de erroMensagem)
+                  final erro = await estoqueProvider.registrarEntrada(
                     prod,
                     _quantidadeAdicionar,
                     novaValidade: _novaValidade,
@@ -467,7 +467,6 @@ class _EntradaScreenState extends State<EntradaScreen> {
                       _produtoSelecionadoId = null;
                       _novaValidade = null;
                     });
-                    final erro = estoqueProvider.erroMensagem;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         backgroundColor: erro == null ? TropicalColors.primary : TropicalColors.danger,

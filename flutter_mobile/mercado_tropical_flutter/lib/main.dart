@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'provider/configuracoes_provider.dart';
 import 'provider/estoque_provider.dart';
 import 'ui/screens/home_page.dart';
 
 // Inicialização da aplicação apontando para a HomePage
-void main() {
+Future<void> main() async {
+  // Carrega as configurações salvas antes de abrir o app
+  WidgetsFlutterBinding.ensureInitialized();
+  await configuracoesProvider.carregar();
   runApp(const MercadoTropicalApp());
 }
 

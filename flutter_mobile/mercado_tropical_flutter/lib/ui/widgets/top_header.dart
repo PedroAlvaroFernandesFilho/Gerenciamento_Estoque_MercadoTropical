@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../provider/estoque_provider.dart';
+import '../screens/configuracoes_screen.dart';
 import '../theme/tropical_theme.dart';
 
 // Cabeçalho superior sem nomes pessoais e com controle de tamanho da fonte
@@ -58,34 +59,64 @@ class TopHeader extends StatelessWidget {
 
               // Botão para alternar tamanho da letra
               Flexible(
-                child: InkWell(
-                  onTap: estoqueProvider.alternarFonte,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: TropicalColors.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🔍', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            estoqueProvider.isLargeFont ? 'Letra Padrão' : 'Letra Grande (+A)',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: InkWell(
+                        onTap: estoqueProvider.alternarFonte,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: TropicalColors.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('🔍', style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  estoqueProvider.isLargeFont ? 'Letra Padrão' : 'Letra Grande (+A)',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+
+                    // Engrenagem: abre a tela de Configurações
+                    Tooltip(
+                      message: 'Configurações',
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ConfiguracoesScreen()),
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: TropicalColors.card,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: TropicalColors.border),
+                          ),
+                          child: const Icon(Icons.settings_rounded, color: TropicalColors.primary, size: 22),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

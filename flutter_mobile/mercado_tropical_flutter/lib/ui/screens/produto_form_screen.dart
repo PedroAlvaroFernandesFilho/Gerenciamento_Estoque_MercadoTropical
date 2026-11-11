@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/produto.dart';
+import '../../provider/configuracoes_provider.dart';
 import '../../provider/estoque_provider.dart';
 import '../theme/tropical_theme.dart';
 import '../widgets/confirmacao_dialog.dart';
@@ -23,7 +24,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   int _estoqueMinimo = 5;
   DateTime _dataValidade = DateTime.now().add(const Duration(days: 180));
 
-  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'quilos', 'litros', 'fardos'];
+  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'lata', 'quilos', 'litros', 'fardos'];
 
   // Valores ao abrir a tela, para saber se algo foi alterado antes de sair
   late final String _nomeOriginal;
@@ -245,9 +246,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   @override
   Widget build(BuildContext context) {
     final editando = widget.produtoExistente != null;
-    // Nome já padronizado (ex: "arroz 5kg" -> "Arroz 5kg"); é o que aparece na prévia e é salvo
-    final nomeAtual = Produto.formatarNome(_nomeCtrl.text);
-    final iconeAutomatico = Produto.iconePorNome(nomeAtual);
+    final padronizar = editando ? configuracoesProvider.padronizarEdicao : configuracoesProvider.padronizarCadastro;
+    final nomeAtual = padronizar ? Produto.formatarNome(_nomeCtrl.text) : Produto.limparEspacos(_nomeCtrl.text);
+    final iconeAutomatico = Produto.iconesAtivos ? Produto.iconePorNome(nomeAtual) : '📦';
 
     // Com dados não salvos, voltar pede confirmação antes de sair
     return PopScope(

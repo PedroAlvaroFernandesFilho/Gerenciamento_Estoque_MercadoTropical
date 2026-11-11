@@ -6,8 +6,13 @@ class Produto {
   final int minimo;
   final String unidade;
   final String validade; // Formato na tela: DD/MM/AAAA
-  final String icone;
+  final String _icone;
   final bool ativo;
+
+  // Definido pela tela de Configurações; desativado, todos os produtos mostram 📦
+  static bool iconesAtivos = true;
+
+  String get icone => iconesAtivos ? _icone : '📦';
 
   Produto({
     this.id,
@@ -18,7 +23,7 @@ class Produto {
     required this.validade,
     String? icone,
     this.ativo = true,
-  }) : icone = (icone != null && icone.isNotEmpty) ? icone : iconePorNome(nome);
+  }) : _icone = (icone != null && icone.isNotEmpty) ? icone : iconePorNome(nome);
 
   // Emoji de cada categoria e suas palavras-chave (sem acento), testados em ordem: o primeiro que combinar vence.
   // Itens mais específicos vêm antes (ex: "água sanitária" é limpeza, não bebida).
@@ -121,6 +126,9 @@ class Produto {
     }
     return resultado.join(' ');
   }
+
+  // Nome sem padronização: tira espaços do começo, do fim e repetidos
+  static String limparEspacos(String nome) => nome.trim().replaceAll(RegExp(r'\s+'), ' ');
 
   // Versão do nome usada só para comparar: sem acentos, minúscula e sem espaços extras
   static String normalizarNome(String nome) {

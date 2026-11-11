@@ -1,6 +1,6 @@
 # Sistema de Controle de Estoque - (Mercado Tropical)
 
-Sistema de gestão de estoque para mercados e comércios locais. É composto por uma **API RESTful em FastAPI** e um **aplicativo em Flutter** (web e mobile) que consome essa API.
+Sistema de gestão de estoque para mercados e comércios locais. É composto por uma **API RESTful em FastAPI** e duas interfaces que consomem essa mesma API: um **aplicativo em Flutter** (web e mobile) e uma **interface desktop em Python (Tkinter)**. O que é feito em uma interface aparece na outra ao atualizar a lista.
 
 O sistema controla produtos, quantidades, validades e o histórico de movimentações, e avisa automaticamente sobre itens vencidos, perto do vencimento, com estoque baixo ou sem estoque.
 
@@ -12,6 +12,8 @@ O sistema controla produtos, quantidades, validades e o histórico de movimenta�
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Como rodar a API](#como-rodar-a-api)
 - [Como rodar o aplicativo Flutter](#como-rodar-o-aplicativo-flutter)
+- [Como rodar a interface Python (Tkinter)](#como-rodar-a-interface-python-tkinter)
+- [Sincronização entre as interfaces](#sincronização-entre-as-interfaces)
 - [Rotas da API](#rotas-da-api)
 - [Exemplos de requisições](#exemplos-de-requisições)
 - [Regras de negócio](#regras-de-negócio)
@@ -27,6 +29,7 @@ O sistema controla produtos, quantidades, validades e o histórico de movimenta�
 | Backend | Python, FastAPI, SQLAlchemy, Pydantic |
 | Banco de dados | PostgreSQL no Supabase |
 | Aplicativo | Flutter (web e Android) |
+| Interface desktop | Python com Tkinter (só biblioteca padrão) |
 | Testes | pytest (API) e flutter_test (app) |
 
 ---
@@ -47,14 +50,17 @@ Gerenciamento_Estoque_MercadoTropical/
 │   ├── tests/              # Testes automatizados da API
 │   ├── .env.example        # Modelo do arquivo de configuração
 │   └── requirements.txt
-└── flutter_mobile/
-    └── mercado_tropical_flutter/
-        ├── lib/
-        │   ├── models/     # Modelos (Produto, Log de movimentação)
-        │   ├── provider/   # Estado do app e configurações
-        │   ├── service/    # Comunicação HTTP com a API
-        │   └── ui/         # Telas, componentes e tema
-        └── test/           # Testes do app
+├── flutter_mobile/
+│   └── mercado_tropical_flutter/
+│       ├── lib/
+│       │   ├── models/     # Modelos (Produto, Log de movimentação)
+│       │   ├── provider/   # Estado do app e configurações
+│       │   ├── service/    # Comunicação HTTP com a API
+│       │   └── ui/         # Telas, componentes e tema
+│       └── test/           # Testes do app
+└── interface_python/
+    ├── app_tkinter.py      # Telas da interface desktop (Tkinter)
+    └── api_cliente.py      # Comunicação HTTP com a API e tradução dos erros
 ```
 
 ---
@@ -122,6 +128,75 @@ static const String _baseUrl = 'http://127.0.0.1:8000';
 - **Histórico:** todas as movimentações (cadastro, edição, entrada, saída, desativação e reativação).
 - **Configurações:** ativa ou desativa a padronização do nome (no cadastro e na edição) e os ícones automáticos.
 - **Acessibilidade:** botão para aumentar o tamanho da letra.
+
+---
+
+## Como rodar a interface Python (Tkinter)
+
+**Pré-requisito:** Python 3.10 ou superior (o Tkinter já vem com o Python no Windows e no macOS) e a API rodando. Não é preciso instalar nenhuma biblioteca.
+
+> No Linux, se aparecer `No module named 'tkinter'`, instale com `sudo apt install python3-tk`.
+
+Na raiz do repositório:
+
+```bash
+python interface_python/app_tkinter.py
+```
+
+Por padrão a interface usa a API em `http://127.0.0.1:8000`. Para usar outro endereço, defina a variável `MERCADO_API_URL` antes de abrir:
+
+```bash
+# Windows (PowerShell)
+$env:MERCADO_API_URL="http://192.168.0.15:8000"
+
+# Linux / macOS
+export MERCADO_API_URL=http://192.168.0.15:8000
+```
+
+### Exemplos de uso
+
+| O que fazer | Como fazer na interface | Rota da API usada |
+|---|---|---|
+| Ver os produtos | A lista abre carregada. As linhas mudam de cor pelo status (vermelho = vencido, amarelo = vencendo ou estoque baixo, cinza = sem estoque) | `GET /products` |
+| Buscar por nome | Digite no campo **Buscar nome** e aperte Enter ou **Filtrar** | `GET /products?search=` |
+| Filtrar por status | Escolha em **Status** (Normal, Estoque baixo, Sem estoque, Vencendo, Vencido) | `GET /products?status=` |
+| Buscar por ID | Digite o número no campo **ID** e clique em **Buscar ID**. Abre os detalhes do produto | `GET /products/{id}` |
+| Cadastrar | **+ Novo** → preencha nome, unidade, quantidade inicial, estoque mínimo e validade (DD/MM/AAAA, opcional) → **Cadastrar** | `POST /products` |
+| Editar | Selecione o produto e clique em **Editar** (ou dê duplo clique na linha). A quantidade muda só por entrada e saída | `PATCH /products/{id}` |
+| Excluir | Selecione e clique em **Excluir** (ou tecla Delete) → confirme. O produto é desativado | `DELETE /products/{id}` |
+| Registrar entrada | Selecione → **↓ Entrada** → quantidade e motivo (opcional) | `POST /products/{id}/entries` |
+| Registrar saída | Selecione → **↑ Saída** → quantidade e motivo (Venda, Descarte ou outro) | `POST /products/{id}/exits` |
+| Reativar | **Desativados** → selecione → **Reativar** | `GET /products/inactive` e `PATCH /products/{id}/reactivate` |
+| Ver o histórico | **Histórico**. Com um produto selecionado, pergunta se quer ver só o dele | `GET /stock-movements` |
+
+**Exemplo completo:**
+
+1. Clique em **+ Novo** e cadastre `Arroz Tipo 1`, unidade `pacotes`, quantidade `20`, mínimo `5`, validade `15/03/2027`.
+2. Com o arroz selecionado, clique em **↑ Saída** e retire `16` com motivo `Venda`. A barra de baixo mostra `Arroz Tipo 1: 20 → 4 pacotes` e a linha fica amarela (**Estoque baixo**).
+3. Tente retirar `10`: aparece a mensagem da API `Estoque insuficiente. Disponível: 4. Solicitado: 10.`
+4. Clique em **Excluir** e confirme: o arroz sai da lista. Em **Desativados**, selecione-o e clique em **Reativar** para ele voltar com os 4 pacotes.
+5. Abra o **Histórico**: aparecem o cadastro, a saída, a desativação e a reativação.
+
+### Mensagens de erro
+
+A interface mostra as mensagens da API em janelas de aviso, em português:
+
+- **API desligada:** `Não foi possível conectar à API em http://127.0.0.1:8000. Verifique se ela está rodando.` (a barra de baixo também fica vermelha).
+- **Produto não encontrado (404):** `Produto com ID 99 não encontrado.`
+- **Saída maior que o estoque (400):** `Estoque insuficiente. Disponível: 3. Solicitado: 5.`
+- **Dados inválidos (422):** lista com cada campo e o problema, ex.: `Nome: deve ter no mínimo 3 caracteres`.
+- Antes de enviar, a própria interface confere se a validade está no formato DD/MM/AAAA e se as quantidades são números inteiros.
+
+---
+
+## Sincronização entre as interfaces
+
+O app Flutter e a interface Python usam a **mesma API e o mesmo banco**, então qualquer alteração feita em uma aparece na outra:
+
+1. Inicie a API e abra as duas interfaces lado a lado.
+2. Cadastre um produto (ou registre uma saída) no app Flutter.
+3. Na interface Python, a lista se atualiza sozinha a cada 10 segundos (opção **Atualizar a cada 10 s**), ou clique em **⟳ Atualizar** na hora.
+4. Faça o caminho contrário: edite ou exclua o produto na interface Python e atualize a lista no app Flutter.
 
 ---
 

@@ -160,7 +160,7 @@ class EstoqueProvider extends ChangeNotifier {
     try {
       final criado = await _service.criarProduto(novo);
       _produtos.add(criado);
-      _registrarLogLocal('cadastro', criado.nome, 'Estoque inicial: ${criado.quantidade} ${criado.unidade}');
+      _registrarLogLocal('cadastro', criado.nome, 'Estoque inicial: ${Produto.quantidadeComUnidade(criado.quantidade, criado.unidade)}');
       notifyListeners();
       return null;
     } catch (e) {
@@ -178,7 +178,7 @@ class EstoqueProvider extends ChangeNotifier {
       if (index != -1) {
         _produtos[index] = salvo;
       }
-      _registrarLogLocal('edicao', salvo.nome, 'Dados atualizados (Mín: ${salvo.minimo} ${salvo.unidade})');
+      _registrarLogLocal('edicao', salvo.nome, 'Dados atualizados (Mín: ${Produto.quantidadeComUnidade(salvo.minimo, salvo.unidade)})');
       notifyListeners();
       return null;
     } catch (e) {
@@ -207,7 +207,7 @@ class EstoqueProvider extends ChangeNotifier {
       _registrarLogLocal(
         'entrada',
         produto.nome,
-        'Adicionado +$quantidade ${produto.unidade}'
+        'Adicionado +${Produto.quantidadeComUnidade(quantidade, produto.unidade)}'
         '${alterarValidade && erroValidade == null ? ' • Nova validade: $novaValidade' : ''}',
       );
       await carregarProdutos();
@@ -224,7 +224,7 @@ class EstoqueProvider extends ChangeNotifier {
     try {
       // Envia o motivo para a API, assim ele fica salvo no histórico
       await _service.registrarSaida(produto.id!, quantidade, motivo: motivo);
-      _registrarLogLocal('saida', produto.nome, 'Retirado -$quantidade ${produto.unidade} ($motivo)');
+      _registrarLogLocal('saida', produto.nome, 'Retirado -${Produto.quantidadeComUnidade(quantidade, produto.unidade)} ($motivo)');
       await carregarProdutos();
       return null;
     } catch (e) {

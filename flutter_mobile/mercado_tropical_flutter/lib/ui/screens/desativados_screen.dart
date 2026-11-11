@@ -267,11 +267,11 @@ class _DesativadosScreenState extends State<DesativadosScreen> {
                   children: [
                     Text(prod.nome, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
                     Text(
-                      'Estoque registrado: ${prod.quantidade} ${prod.unidade}',
+                      'Estoque registrado: ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                       style: const TextStyle(color: TropicalColors.subtext, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Validade: ${prod.validade} • Mín: ${prod.minimo} ${prod.unidade}',
+                      'Validade: ${prod.validade} • Mín: ${Produto.quantidadeComUnidade(prod.minimo, prod.unidade)}',
                       style: const TextStyle(color: TropicalColors.subtext, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -295,7 +295,7 @@ class _DesativadosScreenState extends State<DesativadosScreen> {
                   context: context,
                   titulo: 'Reativar Produto?',
                   mensagem:
-                      'Deseja reativar "${prod.nome}"?\n\nEle voltará a aparecer no estoque com ${prod.quantidade} ${prod.unidade}.',
+                      'Deseja reativar "${prod.nome}"?\n\nEle voltará a aparecer no estoque com ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}.',
                   textoConfirmar: 'Sim, Reativar',
                   corConfirmar: TropicalColors.primary,
                 );
@@ -367,7 +367,7 @@ class _DesativadosScreenState extends State<DesativadosScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Desativado • ${prod.quantidade} ${prod.unidade}',
+                      'Desativado • ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                       style: TextStyle(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],

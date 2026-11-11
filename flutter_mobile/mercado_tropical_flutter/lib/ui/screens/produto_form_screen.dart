@@ -24,7 +24,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   int _estoqueMinimo = 5;
   DateTime _dataValidade = DateTime.now().add(const Duration(days: 180));
 
-  final List<String> _unidades = ['pacotes', 'unidades', 'caixa', 'lata', 'quilos', 'litros', 'fardos'];
+  final List<String> _unidades = ['pacotes', 'unidades', 'caixas', 'latas', 'quilos', 'litros', 'fardos'];
 
   // Valores ao abrir a tela, para saber se algo foi alterado antes de sair
   late final String _nomeOriginal;
@@ -44,13 +44,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
 
     if (p != null) {
       final unidadeAtual = p.unidade.toLowerCase();
-      // 'caixinhas' (nome antigo) passa a ser tratado como 'caixa'
       // 'kg' passa a ser 'quilos' (a API exige pelo menos 3 letras na unidade)
-      _unidadeSelecionada = unidadeAtual == 'caixinhas'
-          ? 'caixa'
-          : unidadeAtual == 'kg'
-              ? 'quilos'
-              : (_unidades.contains(unidadeAtual) ? unidadeAtual : 'unidades');
+      // Mesma unidade na forma plural da lista ("lata" e "latas" viram "latas")
+      final unidadeNaLista = Produto.unidadePara(2, unidadeAtual);
+      _unidadeSelecionada = unidadeAtual == 'kg'
+          ? 'quilos'
+          : (_unidades.contains(unidadeNaLista) ? unidadeNaLista : 'unidades');
       _estoqueInicial = p.quantidade;
       _estoqueMinimo = p.minimo;
       _dataValidade = _converterTextoParaData(p.validade) ?? DateTime.now().add(const Duration(days: 90));
@@ -139,7 +138,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         context: context,
         titulo: 'Produto Já Cadastrado',
         mensagem: '"${p.nome}" já existe e está desativado.\n\nDeseja reativá-lo? '
-            '${_estoqueInicial > 0 ? 'A quantidade informada ($_estoqueInicial $_unidadeSelecionada) será registrada como entrada e a validade será atualizada.' : 'A validade informada será atualizada.'}',
+            '${_estoqueInicial > 0 ? 'A quantidade informada (${Produto.quantidadeComUnidade(_estoqueInicial, _unidadeSelecionada)}) será registrada como entrada e a validade será atualizada.' : 'A validade informada será atualizada.'}',
         textoConfirmar: 'Sim, Reativar',
         textoCancelar: 'Não',
       );
@@ -310,7 +309,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                             Text(
                               editando
                                   ? 'Ícone automático • Unidade: $_unidadeSelecionada'
-                                  : 'Ícone automático • Val: $_validadeFormatada • Mín: $_estoqueMinimo $_unidadeSelecionada',
+                                  : 'Ícone automático • Val: $_validadeFormatada • Mín: ${Produto.quantidadeComUnidade(_estoqueMinimo, _unidadeSelecionada)}',
                               style: const TextStyle(color: TropicalColors.subtext, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -475,7 +474,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Aqui você altera apenas o nome e a unidade do produto.\nEstoque atual: $_estoqueInicial $_unidadeSelecionada. Para somar ou retirar unidades, use as telas de Entrada e Saída.',
+                            'Aqui você altera apenas o nome e a unidade do produto.\nEstoque atual: ${Produto.quantidadeComUnidade(_estoqueInicial, _unidadeSelecionada)}. Para somar ou retirar unidades, use as telas de Entrada e Saída.',
                             style: const TextStyle(color: TropicalColors.subtext, fontSize: 12, height: 1.3),
                           ),
                         ),
@@ -523,7 +522,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                             titulo: editando ? 'Salvar Alterações?' : 'Cadastrar Produto?',
                             mensagem: editando
                                 ? 'Deseja salvar as alterações em "${produtoSalvo.nome}"?'
-                                : 'Deseja cadastrar "${produtoSalvo.nome}" com $_estoqueInicial $_unidadeSelecionada?',
+                                : 'Deseja cadastrar "${produtoSalvo.nome}" com ${Produto.quantidadeComUnidade(_estoqueInicial, _unidadeSelecionada)}?',
                             textoConfirmar: 'Sim, Salvar',
                           );
 

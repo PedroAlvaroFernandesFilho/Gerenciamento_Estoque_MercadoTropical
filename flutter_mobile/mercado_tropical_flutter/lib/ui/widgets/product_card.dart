@@ -91,7 +91,7 @@ class _ProductCardState extends State<ProductCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Validade: ${p.validade} • Mín: ${p.minimo} ${p.unidade}',
+                      'Validade: ${p.validade} • Mín: ${Produto.quantidadeComUnidade(p.minimo, p.unidade)}',
                       style: TextStyle(
                         color: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
                         fontSize: 12,
@@ -123,7 +123,7 @@ class _ProductCardState extends State<ProductCard> {
                       ),
                     ),
                     Text(
-                      p.unidade,
+                      Produto.unidadePara(p.quantidade, p.unidade),
                       style: TextStyle(
                         color: semEstoque ? _cinzaSubtexto : TropicalColors.subtext,
                         fontSize: 11,

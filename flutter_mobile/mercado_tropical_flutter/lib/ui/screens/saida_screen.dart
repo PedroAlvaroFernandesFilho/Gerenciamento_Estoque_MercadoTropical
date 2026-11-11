@@ -218,7 +218,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                   children: [
                     Text(prod.nome, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
                     Text(
-                      'Disponível: ${prod.quantidade} ${prod.unidade}',
+                      'Disponível: ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                       style: const TextStyle(color: TropicalColors.subtext, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -276,7 +276,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                     children: [
                       const Text('NA PRATELEIRA', style: TextStyle(color: TropicalColors.subtext, fontSize: 11, fontWeight: FontWeight.bold)),
                       Text('${prod.quantidade}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                      Text(prod.unidade, style: const TextStyle(color: TropicalColors.subtext, fontSize: 11)),
+                      Text(Produto.unidadePara(prod.quantidade, prod.unidade), style: const TextStyle(color: TropicalColors.subtext, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -286,7 +286,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                     children: [
                       const Text('RESTARÁ', style: TextStyle(color: TropicalColors.subtext, fontSize: 11, fontWeight: FontWeight.bold)),
                       Text('$novoTotal', style: const TextStyle(color: TropicalColors.danger, fontSize: 24, fontWeight: FontWeight.w900)),
-                      Text(prod.unidade, style: const TextStyle(color: TropicalColors.danger, fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text(Produto.unidadePara(novoTotal, prod.unidade), style: const TextStyle(color: TropicalColors.danger, fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -323,7 +323,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                     children: [
                       Text('−$_quantidadeRetirar', style: const TextStyle(color: TropicalColors.danger, fontSize: 30, fontWeight: FontWeight.w900)),
                       Text(
-                        'retirar (${prod.unidade})',
+                        'retirar (${Produto.unidadePara(_quantidadeRetirar, prod.unidade)})',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: TropicalColors.subtext, fontSize: 12),
                       ),
@@ -361,7 +361,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                   context: context,
                   titulo: 'Salvar Retirada?',
                   mensagem:
-                      'Confirma a saída de $_quantidadeRetirar ${prod.unidade} de "${prod.nome}" ($_motivo)?\n\nRestarão $novoTotal ${prod.unidade} no estoque.',
+                      'Confirma a saída de ${Produto.quantidadeComUnidade(_quantidadeRetirar, prod.unidade)} de "${prod.nome}" ($_motivo)?\n\nRestarão ${Produto.quantidadeComUnidade(novoTotal, prod.unidade)} no estoque.',
                   textoConfirmar: 'Sim, Retirar',
                   corConfirmar: TropicalColors.danger,
                 );
@@ -445,7 +445,7 @@ class _SaidaScreenState extends State<SaidaScreen> {
                       spacing: 6,
                       children: [
                         Text(
-                          semEstoque ? 'ESGOTADO (0)' : 'Disponível: ${prod.quantidade} ${prod.unidade}',
+                          semEstoque ? 'ESGOTADO (0)' : 'Disponível: ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                           style: TextStyle(
                             color: semEstoque
                                 ? Colors.grey.shade400

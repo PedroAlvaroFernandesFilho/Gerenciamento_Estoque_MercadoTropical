@@ -286,7 +286,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                   children: [
                     Text(prod.nome, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
                     Text(
-                      'Estoque atual: ${prod.quantidade} ${prod.unidade}',
+                      'Estoque atual: ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                       style: const TextStyle(color: TropicalColors.subtext, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -311,7 +311,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                     children: [
                       const Text('HOJE', style: TextStyle(color: TropicalColors.subtext, fontSize: 11, fontWeight: FontWeight.bold)),
                       Text('${prod.quantidade}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                      Text(prod.unidade, style: const TextStyle(color: TropicalColors.subtext, fontSize: 11)),
+                      Text(Produto.unidadePara(prod.quantidade, prod.unidade), style: const TextStyle(color: TropicalColors.subtext, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -321,7 +321,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                     children: [
                       const Text('NOVO TOTAL', style: TextStyle(color: TropicalColors.subtext, fontSize: 11, fontWeight: FontWeight.bold)),
                       Text('$novoTotal', style: const TextStyle(color: TropicalColors.primary, fontSize: 24, fontWeight: FontWeight.w900)),
-                      Text(prod.unidade, style: const TextStyle(color: TropicalColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text(Produto.unidadePara(novoTotal, prod.unidade), style: const TextStyle(color: TropicalColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -358,7 +358,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                     children: [
                       Text('+$_quantidadeAdicionar', style: const TextStyle(color: TropicalColors.primary, fontSize: 30, fontWeight: FontWeight.w900)),
                       Text(
-                        'adicionar (${prod.unidade})',
+                        'adicionar (${Produto.unidadePara(_quantidadeAdicionar, prod.unidade)})',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: TropicalColors.subtext, fontSize: 12),
                       ),
@@ -449,7 +449,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                   context: context,
                   titulo: 'Salvar Entrada?',
                   mensagem:
-                      'Confirma a adição de +$_quantidadeAdicionar ${prod.unidade} em "${prod.nome}"?\n\nO estoque passará para $novoTotal ${prod.unidade}.'
+                      'Confirma a adição de +${Produto.quantidadeComUnidade(_quantidadeAdicionar, prod.unidade)} em "${prod.nome}"?\n\nO estoque passará para ${Produto.quantidadeComUnidade(novoTotal, prod.unidade)}.'
                       '${_novaValidade != null ? '\nA validade passará para $_novaValidade.' : ''}',
                   textoConfirmar: 'Sim, Salvar',
                   corConfirmar: TropicalColors.primary,
@@ -542,7 +542,7 @@ class _EntradaScreenState extends State<EntradaScreen> {
                       spacing: 6,
                       children: [
                         Text(
-                          semEstoque ? 'Sem estoque (0)' : 'Estoque: ${prod.quantidade} ${prod.unidade}',
+                          semEstoque ? 'Sem estoque (0)' : 'Estoque: ${Produto.quantidadeComUnidade(prod.quantidade, prod.unidade)}',
                           style: TextStyle(
                             color: semEstoque
                                 ? Colors.grey.shade400

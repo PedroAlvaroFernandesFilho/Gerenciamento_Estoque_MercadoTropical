@@ -127,6 +127,31 @@ class Produto {
     return resultado.join(' ');
   }
 
+  // Pares singular/plural das unidades
+  static const Map<String, String> _plurais = {
+    'pacote': 'pacotes',
+    'unidade': 'unidades',
+    'caixa': 'caixas',
+    'lata': 'latas',
+    'quilo': 'quilos',
+    'litro': 'litros',
+    'fardo': 'fardos',
+  };
+
+  // Unidade conforme a quantidade: 1 lata, 0 latas, 5 latas.
+  // Aceita a unidade salva no singular ou no plural; uma unidade fora da lista aparece como está.
+  static String unidadePara(int quantidade, String unidade) {
+    final u = unidade.trim().toLowerCase();
+    for (final par in _plurais.entries) {
+      if (u == par.key || u == par.value) return quantidade == 1 ? par.key : par.value;
+    }
+    return unidade;
+  }
+
+  // Ex: "5 latas", "1 lata"
+  static String quantidadeComUnidade(int quantidade, String unidade) =>
+      '$quantidade ${unidadePara(quantidade, unidade)}';
+
   // Nome sem padronização: tira espaços do começo, do fim e repetidos
   static String limparEspacos(String nome) => nome.trim().replaceAll(RegExp(r'\s+'), ' ');
 

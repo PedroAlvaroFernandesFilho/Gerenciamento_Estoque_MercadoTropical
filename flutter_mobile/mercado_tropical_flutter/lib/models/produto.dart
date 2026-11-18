@@ -265,6 +265,9 @@ class Produto {
     }
   }
 
+  // Validade como data (null quando não tem validade); usada para ordenar a lista
+  DateTime? get dataValidade => _dataValidade;
+
   bool get isVencido {
     final data = _dataValidade;
     if (data == null) return false;

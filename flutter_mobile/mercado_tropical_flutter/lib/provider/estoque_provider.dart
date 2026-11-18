@@ -16,6 +16,7 @@ class EstoqueProvider extends ChangeNotifier {
   String? _erro;
   String _filtroStatus = 'todos'; // 'todos', 'baixo', 'sem_estoque', 'vencendo', 'vencido'
   String _termoBusca = '';
+  String _ordem = 'nome'; // 'nome', 'quantidade', 'validade'
   bool _isLargeFont = false;
 
   List<Produto> get produtos => _produtos;
@@ -24,6 +25,7 @@ class EstoqueProvider extends ChangeNotifier {
   String? get erroMensagem => _erro;
   String get filtroStatus => _filtroStatus;
   String get termoBusca => _termoBusca;
+  String get ordem => _ordem;
   bool get isLargeFont => _isLargeFont;
   List<Produto> get produtosDesativados => _desativados;
   bool get carregandoDesativados => _carregandoDesativados;
@@ -46,6 +48,38 @@ class EstoqueProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void definirOrdem(String novaOrdem) {
+    _ordem = novaOrdem;
+    notifyListeners();
+  }
+
+  // Ordena sem alterar a lista original:
+  // 'nome' = A-Z, 'quantidade' = menor quantidade primeiro, 'validade' = vence primeiro (sem validade no final).
+  // Empates ficam em ordem alfabética.
+  static List<Produto> ordenarProdutos(List<Produto> lista, String ordem) {
+    int porNome(Produto a, Produto b) =>
+        Produto.normalizarNome(a.nome).compareTo(Produto.normalizarNome(b.nome));
+
+    int comparar(Produto a, Produto b) {
+      if (ordem == 'quantidade') {
+        final diferenca = a.quantidade.compareTo(b.quantidade);
+        if (diferenca != 0) return diferenca;
+      } else if (ordem == 'validade') {
+        final validadeA = a.dataValidade;
+        final validadeB = b.dataValidade;
+        if (validadeA != null && validadeB != null) {
+          final diferenca = validadeA.compareTo(validadeB);
+          if (diferenca != 0) return diferenca;
+        } else if (validadeA != null || validadeB != null) {
+          return validadeA == null ? 1 : -1; // Sem validade vai para o final
+        }
+      }
+      return porNome(a, b);
+    }
+
+    return [...lista]..sort(comparar);
+  }
+
   // Itens sem estoque vão para o final da lista; a ordem original (nome) é preservada em cada grupo.
   List<Produto> get produtosFiltrados {
     final filtrados = _produtos.where((p) {
@@ -62,9 +96,12 @@ class EstoqueProvider extends ChangeNotifier {
       return bateFiltro && bateBusca;
     }).toList();
 
+    // Ordem escolhida no botão de ordenação da tela de estoque
+    final ordenados = ordenarProdutos(filtrados, _ordem);
+
     return [
-      ...filtrados.where((p) => !p.isSemEstoque),
-      ...filtrados.where((p) => p.isSemEstoque),
+      ...ordenados.where((p) => !p.isSemEstoque),
+      ...ordenados.where((p) => p.isSemEstoque),
     ];
   }
 

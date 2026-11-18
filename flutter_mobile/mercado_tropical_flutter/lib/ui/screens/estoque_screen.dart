@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../provider/estoque_provider.dart';
 import '../theme/tropical_theme.dart';
+import '../widgets/busca_com_ordenacao.dart';
 import '../widgets/product_card.dart';
 import '../widgets/summary_grid.dart';
 
@@ -87,22 +88,27 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                 const SizedBox(height: 12),
 
                 // Barra de busca
-                TextField(
-                  onChanged: estoqueProvider.definirBusca,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Buscar produto pelo nome...',
-                    hintStyle: const TextStyle(color: TropicalColors.subtext, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: TropicalColors.subtext),
-                    filled: true,
-                    fillColor: TropicalColors.surface,
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: TropicalColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: TropicalColors.primary),
+                // Botão ☰ ao lado da busca: abre as opções de ordenação e fecha ao escolher
+                BuscaComOrdenacao(
+                  ordemAtual: estoqueProvider.ordem,
+                  onOrdenar: estoqueProvider.definirOrdem,
+                  campoBusca: TextField(
+                    onChanged: estoqueProvider.definirBusca,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar produto pelo nome...',
+                      hintStyle: const TextStyle(color: TropicalColors.subtext, fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, color: TropicalColors.subtext),
+                      filled: true,
+                      fillColor: TropicalColors.surface,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: TropicalColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: TropicalColors.primary),
+                      ),
                     ),
                   ),
                 ),

@@ -160,6 +160,12 @@ class EstoqueProvider extends ChangeNotifier {
   Future<void> carregarHistorico() async {
     try {
       final movimentosApi = await _service.listarMovimentacoes();
+      // Busca os desativados também, para o histórico mostrar o nome deles sem precisar abrir a tela de desativados
+      try {
+        _desativados = await _service.listarDesativados();
+      } catch (e) {
+        debugPrint('Erro ao carregar desativados para o histórico: $e');
+      }
       // Inclui os desativados para o histórico mostrar o nome deles
       final mapaNomes = {for (var p in [..._produtos, ..._desativados]) p.id: p.nome};
 

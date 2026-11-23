@@ -6,9 +6,9 @@ import 'ui/screens/home_page.dart';
 
 // Inicialização da aplicação apontando para a HomePage
 Future<void> main() async {
-  // Carrega as configurações salvas antes de abrir o app
   WidgetsFlutterBinding.ensureInitialized();
   await configuracoesProvider.carregar();
+  await estoqueProvider.carregarFonte();
   runApp(const MercadoTropicalApp());
 }
 

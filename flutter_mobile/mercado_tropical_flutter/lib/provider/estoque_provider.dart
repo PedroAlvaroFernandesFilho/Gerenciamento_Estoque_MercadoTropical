@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/log_movimentacao.dart';
 import '../models/produto.dart';
 import '../service/produto_service.dart';
 
 class EstoqueProvider extends ChangeNotifier {
+  static const _chaveLetraGrande = 'letra_grande';
+
   final ProdutoService _service = ProdutoService();
 
   List<Produto> _produtos = [];
@@ -33,9 +36,27 @@ class EstoqueProvider extends ChangeNotifier {
 
   List<Produto> get todosProdutos => _produtos.where((p) => p.ativo).toList();
 
-  void alternarFonte() {
+  // Lê o tamanho de letra salvo no aparelho; se não conseguir, mantém a letra padrão
+  Future<void> carregarFonte() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _isLargeFont = prefs.getBool(_chaveLetraGrande) ?? false;
+    } catch (e) {
+      debugPrint('Erro ao carregar o tamanho da letra: $e');
+    }
+    notifyListeners();
+  }
+
+  // Troca o tamanho da letra e salva a escolha no aparelho
+  Future<void> alternarFonte() async {
     _isLargeFont = !_isLargeFont;
     notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_chaveLetraGrande, _isLargeFont);
+    } catch (e) {
+      debugPrint('Erro ao salvar o tamanho da letra: $e');
+    }
   }
 
   void definirFiltro(String novoFiltro) {

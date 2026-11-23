@@ -94,6 +94,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   onOrdenar: estoqueProvider.definirOrdem,
                   campoBusca: TextField(
                     onChanged: estoqueProvider.definirBusca,
+                    textInputAction: TextInputAction.search, // Tecla de Enter vira uma lupa no teclado
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'Buscar produto pelo nome...',

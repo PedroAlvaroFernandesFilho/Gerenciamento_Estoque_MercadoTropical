@@ -157,6 +157,13 @@ class EstoqueProvider extends ChangeNotifier {
     }
   }
 
+  // A API grava o horário em UTC sem indicar o fuso; aqui ele é convertido para o horário do aparelho
+  static DateTime? converterDataApi(String dataIso) {
+    if (dataIso.isEmpty) return null;
+    final temFuso = dataIso.endsWith('Z') || RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(dataIso);
+    return DateTime.tryParse(temFuso ? dataIso : '${dataIso}Z')?.toLocal();
+  }
+
   Future<void> carregarHistorico() async {
     try {
       final movimentosApi = await _service.listarMovimentacoes();
@@ -210,7 +217,7 @@ class EstoqueProvider extends ChangeNotifier {
           tipo: tipo,
           produtoNome: nomeProd,
           detalhe: detalhe,
-          dataHora: DateTime.tryParse(dataIso) ?? DateTime.now(),
+          dataHora: converterDataApi(dataIso) ?? DateTime.now(),
         );
       }).toList();
     } catch (_) {

@@ -56,6 +56,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
             onRefresh: estoqueProvider.carregarProdutos,
             child: ListView(
               padding: const EdgeInsets.all(16),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // Fecha o teclado ao rolar a lista
               children: [
                 // Painel numérico completo sincronizado com os dados da API
                 const SummaryGrid(
